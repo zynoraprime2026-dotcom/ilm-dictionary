@@ -89,6 +89,7 @@ a { color: var(--gold); }
   <div class="tabs">
     <button data-tab="search" class="active">Search</button>
     <button data-tab="roots">Roots</button>
+    <button data-tab="browse">Browse</button>
     <button data-tab="words">My Words</button>
   </div>
 
@@ -391,6 +392,50 @@ async function loadWotd() {
   } catch (e) { el.innerHTML = `<div class="note">Word of the day unavailable offline</div>`; }
 }
 
+// ---- BROWSE TAB: every word, alif -> yaa ----
+let browseLetter = "\u0627"; // start on alif
+let browseWords = [];
+let browseTotal = -1;
+
+async function renderBrowse() {
+  const el = $("#content");
+  browseWords = [];
+  browseTotal = -1;
+  el.innerHTML = `
+    <p class="note" style="margin-top:10px">Every dictionary word, alif &rarr; yaa — tap a word for all its senses</p>
+    <div class="alphabet">${AR_ALPHABET.map(L => `<button class="lchip ${browseLetter === L ? "on" : ""}" data-bl="${L}">${L}</button>`).join("")}</div>
+    <div id="blist"><div class="loading">…</div></div>`;
+  el.querySelectorAll("[data-bl]").forEach(b => b.addEventListener("click", () => {
+    browseLetter = b.dataset.bl;
+    browseWords = [];
+    browseTotal = -1;
+    el.querySelectorAll("[data-bl]").forEach(x => x.classList.toggle("on", x.dataset.bl === browseLetter));
+    $("#blist").innerHTML = `<div class="loading">…</div>`;
+    loadBrowseMore();
+  }));
+  loadBrowseMore();
+}
+
+async function loadBrowseMore() {
+  const el = $("#blist");
+  try {
+    const d = await api(`/v1/dictionary/words?letter=${encodeURIComponent(browseLetter)}&limit=50&offset=${browseWords.length}`);
+    browseWords = browseWords.concat(d.words || []);
+    browseTotal = d.total;
+    if (!browseWords.length) {
+      el.innerHTML = `<div class="empty">No words start with ${esc(browseLetter)}.</div>`;
+      return;
+    }
+    el.innerHTML = browseWords.map(e => wordCard(e, { tapword: true, quran: false })).join("") +
+      `<p class="note" style="text-align:center">${browseWords.length} of ${browseTotal} words starting with ${esc(browseLetter)}</p>` +
+      (browseWords.length < browseTotal ? `<div style="text-align:center;margin:14px"><button class="btn ghost" id="bmore">Show more (${browseTotal - browseWords.length} left)</button></div>` : "");
+    wireCards(el);
+    const m = $("#bmore"); if (m) m.addEventListener("click", loadBrowseMore);
+  } catch (e) {
+    el.innerHTML = `<div class="empty">Could not load words: ${esc(e.message)}</div>`;
+  }
+}
+
 // ---- WORD DETAIL ----
 async function showWord(w) {
   const el = $("#content");
@@ -400,7 +445,7 @@ async function showWord(w) {
     el.innerHTML = `<button class="back" id="back2">← Back</button>
       <p class="note" style="text-align:left">All senses of ${esc(w)} · its root appears ${esc(d.quran_occurrences_of_root)}× in the Quran</p>` +
       (d.entries || []).map(e => wordCard(e, { srs: true })).join("");
-    $("#back2").addEventListener("click", () => { tab === "search" ? renderSearch() : renderWords(); });
+    $("#back2").addEventListener("click", () => { tab === "search" ? renderSearch() : tab === "browse" ? renderBrowse() : renderWords(); });
     wireCards(el);
   } catch (e) {
     el.innerHTML = `<div class="empty">${esc(e.message)}</div><button class="back" id="back2">← Back</button>`;
@@ -467,7 +512,7 @@ async function showRoot(root) {
       </div>
       <p class="note" style="text-align:left">Every word derived from this root:</p>` +
       (d.entries || []).map(e => wordCard(e, { tapword: false })).join("");
-    $("#back2").addEventListener("click", () => { tab === "search" ? renderSearch() : renderRoots(); });
+    $("#back2").addEventListener("click", () => { tab === "search" ? renderSearch() : tab === "browse" ? renderBrowse() : renderRoots(); });
     wireCards(el);
   } catch (e) {
     el.innerHTML = `<div class="empty">${esc(e.message)}</div><button class="back" id="back2">← Back</button>`;
@@ -608,6 +653,7 @@ document.querySelectorAll(".tabs button").forEach(b => b.addEventListener("click
   tab = b.dataset.tab;
   if (tab === "search") renderSearch();
   else if (tab === "roots") renderRoots();
+  else if (tab === "browse") renderBrowse();
   else renderWords();
 }));
 renderSearch();
