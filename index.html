@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="theme-color" content="#0f2121" />
+<title>Ilm Dictionary — Arabic for the serious student</title>
+<link rel="icon" type="image/png" href="icon-192.png" />
+<link rel="apple-touch-icon" href="icon-192.png" />
+<link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Inter:wght@400;600;700&display=swap" rel="stylesheet" />
+<style>
+:root { --bg:#0f2121; --card:#1a2f2c; --card2:#223834; --border:#2c443f; --gold:#C9A24B; --text:#F3ECDA; --muted:#8FA6A0; --red:#C1533D; }
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+body { background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; min-height: 100vh; padding-bottom: 30px; }
+.wrap { max-width: 640px; margin: 0 auto; padding: 14px 14px 26px; }
+header { text-align: center; padding: 18px 0 4px; }
+.eyebrow { letter-spacing: 3px; font-size: 10px; color: var(--gold); font-weight: 600; }
+h1 { font-size: 22px; margin-top: 4px; font-weight: 700; }
+.sub { font-size: 12.5px; color: var(--muted); margin-top: 4px; }
+.tabs { display: flex; gap: 4px; margin: 16px 0 12px; border-bottom: 1px solid var(--border); padding-bottom: 0; }
+.tabs button { flex: 1; background: none; border: none; color: var(--muted); font-size: 13.5px; font-weight: 600; padding: 9px 2px; cursor: pointer; border-bottom: 2px solid transparent; font-family: inherit; }
+.tabs button.active { color: var(--gold); border-bottom-color: var(--gold); }
+.searchbar { display: flex; gap: 8px; }
+.searchbar input { flex: 1; background: var(--card); border: 1px solid var(--border); color: var(--text); padding: 12px 14px; border-radius: 10px; font-size: 15px; font-family: inherit; }
+.searchbar input:focus { outline: none; border-color: var(--gold); }
+.btn { background: var(--gold); color: #0f2121; border: none; padding: 10px 16px; border-radius: 10px; font-weight: 600; cursor: pointer; font-size: 14px; font-family: inherit; }
+.btn.ghost { background: none; border: 1px solid var(--border); color: var(--gold); }
+.card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 14px 16px; margin-top: 12px; }
+.ar { font-family: 'Amiri', serif; font-size: 26px; direction: rtl; line-height: 1.8; }
+.pos { display: inline-block; font-size: 10.5px; color: var(--gold); border: 1px solid rgba(201,162,75,.35); border-radius: 8px; padding: 1px 8px; margin-left: 8px; vertical-align: middle; }
+.gloss { font-size: 14px; color: var(--text); margin-top: 6px; line-height: 1.55; }
+.rootchip { display: inline-block; background: rgba(201,162,75,.14); color: var(--gold); font-size: 12px; padding: 3px 10px; border-radius: 12px; margin-top: 8px; cursor: pointer; font-family: 'Amiri', serif; font-size: 15px; }
+.star { float: right; background: none; border: none; color: var(--muted); font-size: 19px; cursor: pointer; padding: 0 2px; }
+.star.on { color: var(--gold); }
+.note { color: var(--muted); font-size: 12px; font-style: italic; margin-top: 8px; }
+.empty { text-align: center; color: var(--muted); padding: 26px 10px; font-size: 14px; line-height: 1.6; }
+.loading { text-align: center; color: var(--muted); padding: 26px; font-size: 14px; }
+.wotd-label { font-size: 10.5px; letter-spacing: 2px; color: var(--gold); font-weight: 600; }
+.wcard { text-align: center; }
+.rootsgrid { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+.rchip { background: var(--card2); border: 1px solid var(--border); color: var(--text); border-radius: 10px; padding: 8px 12px; cursor: pointer; font-size: 13px; text-align: left; display: flex; flex-direction: column; gap: 2px; min-width: 148px; font-family: inherit; }
+.rchip:hover { border-color: var(--gold); }
+.rchip .ra { font-family: 'Amiri', serif; font-size: 18px; }
+.rchip .rm { font-size: 10.5px; color: var(--muted); white-space: normal; }
+.back { background: none; border: none; color: var(--gold); font-size: 13.5px; cursor: pointer; padding: 4px 0; font-family: inherit; }
+.flip { perspective: 900px; cursor: pointer; }
+.flip-inner { transition: transform .5s; transform-style: preserve-3d; position: relative; }
+.flip.flipped .flip-inner { transform: rotateY(180deg); }
+.flip-face { backface-visibility: hidden; }
+.flip-back { position: absolute; inset: 0; transform: rotateY(180deg); display: flex; align-items: center; justify-content: center; }
+.revbtns { display: flex; gap: 10px; margin-top: 12px; }
+.revbtns .btn { flex: 1; }
+#content { min-height: 320px; }
+footer { text-align: center; color: var(--muted); font-size: 11px; margin-top: 26px; }
+a { color: var(--gold); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="eyebrow">ILM DICTIONARY</div>
+    <h1>Arabic for the serious student</h1>
+    <div class="sub">English &harr; Arabic · classical root meanings · Quran usage · flashcards</div>
+  </header>
+
+  <div class="tabs">
+    <button data-tab="search" class="active">Search</button>
+    <button data-tab="roots">Roots</button>
+    <button data-tab="words">My Words</button>
+  </div>
+
+  <div id="content"></div>
+
+  <footer>Ilm Dictionary · built on the Ilm API · works offline once installed</footer>
+</div>
+
+<script>
+const DEFAULT_KEY = "ilm_41cf502bdd0b2b07650bdb302edece3c";
+const getKey = () => localStorage.getItem("ilm_key") || DEFAULT_KEY;
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#039;" }[c]));
+
+async function api(path) {
+  const r = await fetch("https://ilm-api.vercel.app" + path, { headers: { "x-api-key": getKey() } });
+  const data = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(data.error || "Request failed");
+  return data;
+}
+
+// ---- my words (vocabulary book) ----
+const WORDS_KEY = "ildict_words";
+const myWords = () => JSON.parse(localStorage.getItem(WORDS_KEY) || "[]");
+function isStarred(w) { return myWords().some(m => m.word === w); }
+function toggleStar(word, gloss, root) {
+  let ws = myWords();
+  const ix = ws.findIndex(m => m.word === word);
+  if (ix >= 0) ws.splice(ix, 1); else ws.unshift({ word, gloss: (gloss || "").slice(0, 300), root: root || "", added: Date.now() });
+  localStorage.setItem(WORDS_KEY, JSON.stringify(ws));
+  return ix < 0;
+}
+
+// ---- views ----
+let tab = "search";
+
+function wordCard(e, opts = {}) {
+  const starred = isStarred(e.word);
+  return `<div class="card" ${opts.tapword ? `data-w="${esc(e.word)}"` : ""}>
+    <button class="star ${starred ? "on" : ""}" data-star="${esc(e.word)}" data-gloss="${esc((e.gloss_en||"").slice(0,120))}" data-root="${esc(e.root||"")}">${starred ? "★" : "☆"}</button>
+    <div class="ar">${esc(e.word)}<span class="pos">${esc(e.pos || "")}</span></div>
+    <div class="gloss">${esc(e.gloss_en || "")}</div>
+    ${e.root ? `<span class="rootchip" data-root="${esc(e.root)}">جذر ${esc(e.root)}</span>` : ""}
+    ${opts.tapword ? `<div class="note">Tap the word for all senses</div>` : ""}
+  </div>`;
+}
+
+function wireCards(scope) {
+  scope.querySelectorAll("[data-star]").forEach(b => b.addEventListener("click", ev => {
+    ev.stopPropagation();
+    const now = toggleStar(b.dataset.star, b.dataset.gloss, b.dataset.root);
+    document.querySelectorAll(`[data-star="${CSS.escape(b.dataset.star)}"]`).forEach(x => { x.textContent = now ? "★" : "☆"; x.classList.toggle("on", now); });
+  }));
+  scope.querySelectorAll(".rootchip, .rchip").forEach(b => b.addEventListener("click", ev => {
+    ev.stopPropagation();
+    showRoot(b.dataset.root);
+  }));
+  scope.querySelectorAll("[data-w]").forEach(c => c.addEventListener("click", () => showWord(c.dataset.w)));
+}
+
+// ---- SEARCH TAB ----
+async function renderSearch() {
+  const el = $("#content");
+  el.innerHTML = `
+    <div class="searchbar"><input id="q" placeholder="English meaning or Arabic word — e.g. patience, صبر" /><button class="btn" id="go">Search</button></div>
+    <div class="card wcard" id="wotd"><div class="wotd-label">📖 WORD OF THE DAY</div><div class="loading">…</div></div>
+    <div id="results"></div>`;
+  const q = $("#q");
+  const run = async () => {
+    const v = q.value.trim();
+    if (!v) return;
+    $("#results").innerHTML = `<div class="loading">Searching…</div>`;
+    try {
+      const data = await api(`/v1/dictionary/search?q=${encodeURIComponent(v)}`);
+      $("#results").innerHTML = data.count === 0
+        ? `<div class="empty">No entry found for "${esc(v)}".<br>Try an English meaning, an Arabic word,<br>or browse the Roots tab.</div>`
+        : `<p class="note" style="text-align:left">${data.count} entr${data.count === 1 ? "y" : "ies"} for "${esc(v)}"</p>` +
+          data.results.map(e => wordCard(e, { tapword: true })).join("");
+      wireCards($("#results"));
+    } catch (e) {
+      $("#results").innerHTML = `<div class="empty">Search failed: ${esc(e.message)}</div>`;
+    }
+  };
+  $("#go").addEventListener("click", run);
+  q.addEventListener("keydown", e => { if (e.key === "Enter") run(); });
+  q.focus();
+  loadWotd();
+}
+
+async function loadWotd() {
+  const el = $("#wotd");
+  try {
+    const roots = await api("/v1/dictionary/roots");
+    const epochDay = Math.floor(Date.now() / 86400000);
+    const root = roots.roots[Math.abs(epochDay) % roots.roots.length].root;
+    const fam = await api(`/v1/dictionary/root/${encodeURIComponent(root)}`);
+    const e = fam.entries[0];
+    el.innerHTML = `<div class="wotd-label">📖 WORD OF THE DAY · root ${esc(fam.root)}</div>
+      <div class="ar" style="margin-top:8px">${esc(e.word)}<span class="pos">${esc(e.pos || "")}</span></div>
+      <div class="gloss">${esc(e.gloss_en || "")}</div>
+      <div class="note">A new word every day — star it to add it to your study deck</div>
+      <span class="rootchip" data-root="${esc(fam.root)}">جذر ${esc(fam.root)} — see the whole family</span>`;
+    wireCards(el);
+  } catch (e) { el.innerHTML = `<div class="note">Word of the day unavailable offline</div>`; }
+}
+
+// ---- WORD DETAIL ----
+async function showWord(w) {
+  const el = $("#content");
+  el.innerHTML = `<button class="back" id="back2">← Back</button><div class="loading">Loading ${esc(w)}…</div>`;
+  try {
+    const d = await api(`/v1/dictionary/word/${encodeURIComponent(w)}`);
+    el.innerHTML = `<button class="back" id="back2">← Back</button>
+      <p class="note" style="text-align:left">All senses of ${esc(w)} · its root appears ${esc(d.quran_occurrences_of_root)}× in the Quran</p>` +
+      (d.entries || []).map(e => wordCard(e, {})).join("");
+    $("#back2").addEventListener("click", () => { tab === "search" ? renderSearch() : renderWords(); });
+    wireCards(el);
+  } catch (e) {
+    el.innerHTML = `<div class="empty">${esc(e.message)}</div><button class="back" id="back2">← Back</button>`;
+    $("#back2").addEventListener("click", () => renderSearch());
+  }
+}
+
+// ---- ROOTS TAB ----
+async function renderRoots() {
+  const el = $("#content");
+  el.innerHTML = `<div class="searchbar"><input id="rq" placeholder="Filter roots by meaning — e.g. mercy, knowledge" /><button class="btn" id="rgo">Filter</button></div>
+    <p class="note" style="margin-top:10px">Loading roots…</p>`;
+  try {
+    const data = await api("/v1/roots");
+    let shown = 100;
+    const draw = () => {
+      const f = ($("#rq").value || "").trim().toLowerCase();
+      const list = f ? data.filter(r => (r.meaning || "").toLowerCase().includes(f) || r.root_arabic.includes(f)) : data;
+      const items = list.slice(0, shown).map(r => `
+        <button class="rchip" data-root="${esc(r.root_arabic)}">
+          <span class="ra">${esc(r.root_arabic)} <span style="opacity:.6;font-size:12px">(${esc(r.occurrence_count)})</span></span>
+          <span class="rm">${esc((r.meaning || "root meaning not recorded").split(/[,.]/)[0] + (r.meaning ? "…" : ""))}</span>
+        </button>`).join("");
+      el.innerHTML = `<div class="searchbar"><input id="rq" value="${esc($("#rq") ? $("#rq").value : "")}" placeholder="Filter roots by meaning — e.g. mercy, knowledge" /><button class="btn" id="rgo">Filter</button></div>
+        <p class="note" style="margin-top:10px">${f ? list.length + " matching" : data.length} Quranic roots — tap one for its word family${f ? "" : ", most frequent first"}</p>
+        <div class="rootsgrid">${items}</div>
+        ${shown < list.length ? `<div style="text-align:center;margin:14px"><button class="btn ghost" id="rmore">Show more (${list.length - shown} left)</button></div>` : ""}`;
+      $("#rgo").addEventListener("click", draw);
+      $("#rq").addEventListener("keydown", e => { if (e.key === "Enter") draw(); });
+      const m = $("#rmore"); if (m) m.addEventListener("click", () => { shown += 200; draw(); });
+      wireCards(el);
+    };
+    draw();
+  } catch (e) { el.innerHTML = `<div class="empty">Could not load roots: ${esc(e.message)}</div>`; }
+}
+
+async function showRoot(root) {
+  const el = $("#content");
+  el.innerHTML = `<button class="back" id="back2">← Back</button><div class="loading">Loading root family…</div>`;
+  try {
+    const d = await api(`/v1/dictionary/root/${encodeURIComponent(root)}`);
+    const q = d.quranic || {};
+    el.innerHTML = `<button class="back" id="back2">← Back</button>
+      <div class="card">
+        <div class="ar" style="font-size:32px;text-align:center">${esc(d.root)}</div>
+        ${q.meaning ? `<div class="gloss" style="text-align:center">${esc(q.meaning)}</div>` : ""}
+        <div class="note" style="text-align:center">${esc(d.entry_count)} word(s) built on this root${q.occurrence_count ? " · appears " + esc(q.occurrence_count) + "× in the Quran" : ""}</div>
+      </div>
+      <p class="note" style="text-align:left">Every word derived from this root:</p>` +
+      (d.entries || []).map(e => wordCard(e, { tapword: false })).join("");
+    $("#back2").addEventListener("click", () => { tab === "search" ? renderSearch() : renderRoots(); });
+    wireCards(el);
+  } catch (e) {
+    el.innerHTML = `<div class="empty">${esc(e.message)}</div><button class="back" id="back2">← Back</button>`;
+    $("#back2").addEventListener("click", () => renderRoots());
+  }
+}
+
+// ---- MY WORDS TAB ----
+function renderWords() {
+  const el = $("#content");
+  const ws = myWords();
+  if (ws.length === 0) {
+    el.innerHTML = `<div class="empty">Your vocabulary book is empty.<br>Star ☆ any word while searching or browsing roots<br>and it will land here as a flashcard.</div>`;
+    return;
+  }
+  el.innerHTML = `
+    <div class="card" style="display:flex;justify-content:space-between;align-items:center">
+      <span><b style="color:var(--gold)">${ws.length}</b> saved word${ws.length === 1 ? "" : "s"}</span>
+      <button class="btn" id="review">Review flashcards</button>
+    </div>
+    ${ws.map(w => `<div class="card">
+      <button class="star on" data-star="${esc(w.word)}" data-gloss="${esc(w.gloss)}" data-root="${esc(w.root)}">★</button>
+      <div class="ar">${esc(w.word)}</div>
+      <div class="gloss">${esc(w.gloss)}</div>
+      ${w.root ? `<span class="rootchip" data-root="${esc(w.root)}">جذر ${esc(w.root)}</span>` : ""}
+    </div>`).join("")}
+    <p class="note">Star a word again to remove it</p>`;
+  $("#review").addEventListener("click", () => review(ws.slice()));
+  wireCards(el);
+}
+
+function review(queue, total) {
+  total = total || queue.length;
+  if (queue.length === 0) {
+    $("#content").innerHTML = `<div class="empty">Session complete — ${total} card${total === 1 ? "" : "s"} reviewed.<br>May Allah increase you in knowledge.</div><div style="text-align:center;margin:14px"><button class="btn ghost" id="againAll">Back to My Words</button></div>`;
+    $("#againAll").addEventListener("click", renderWords);
+    return;
+  }
+  const w = queue[0];
+  $("#content").innerHTML = `
+    <p class="note" style="text-align:center">${total - queue.length + 1} / ${total}</p>
+    <div class="card flip" id="fc" style="min-height:200px;display:flex;align-items:center">
+      <div class="flip-inner" style="width:100%;min-height:170px">
+        <div class="flip-face" style="display:flex;align-items:center;justify-content:center"><div class="ar" style="font-size:40px">${esc(w.word)}</div></div>
+        <div class="flip-back card" style="border:none"><div><div class="gloss">${esc(w.gloss)}</div>${w.root ? `<div class="note">جذر ${esc(w.root)}</div>` : ""}</div></div>
+      </div>
+    </div>
+    <p class="note" style="text-align:center">Tap the card to see the meaning</p>
+    <div class="revbtns">
+      <button class="btn ghost" id="rAgain">↻ Again</button>
+      <button class="btn" id="rKnow">✓ Know it</button>
+    </div>`;
+  const fc = $("#fc");
+  fc.addEventListener("click", () => fc.classList.toggle("flipped"));
+  $("#rKnow").addEventListener("click", () => review(queue.slice(1), total));
+  $("#rAgain").addEventListener("click", () => review(queue.slice(1).concat([w]), total));
+}
+
+// ---- tabs ----
+document.querySelectorAll(".tabs button").forEach(b => b.addEventListener("click", () => {
+  document.querySelectorAll(".tabs button").forEach(x => x.classList.remove("active"));
+  b.classList.add("active");
+  tab = b.dataset.tab;
+  if (tab === "search") renderSearch();
+  else if (tab === "roots") renderRoots();
+  else renderWords();
+}));
+renderSearch();
+
+// PWA install
+if ("serviceWorker" in navigator) navigator.serviceWorker.register("./sw.js");
+</script>
+</body>
+</html>
