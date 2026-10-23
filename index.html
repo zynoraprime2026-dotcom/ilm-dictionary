@@ -36,6 +36,9 @@ h1 { font-size: 22px; margin-top: 4px; font-weight: 700; }
 .star.on { color: var(--gold); }
 .speak { float: right; background: none; border: none; color: var(--muted); font-size: 16px; cursor: pointer; padding: 0 6px; }
 .speak:hover { color: var(--gold); }
+.speak.loading { opacity: .35; pointer-events: none; animation: ildpulse 1s infinite; }
+.speak.playing { color: var(--gold); }
+@keyframes ildpulse { 0%,100% { opacity: .35 } 50% { opacity: 1 } }
 .note { color: var(--muted); font-size: 12px; font-style: italic; margin-top: 8px; }
 .empty { text-align: center; color: var(--muted); padding: 26px 10px; font-size: 14px; line-height: 1.6; }
 .loading { text-align: center; color: var(--muted); padding: 26px; font-size: 14px; }
@@ -76,7 +79,7 @@ a { color: var(--gold); }
   <header>
     <div class="eyebrow">ILM DICTIONARY</div>
     <h1>Arabic for the serious student</h1>
-    <div class="sub">English &harr; Arabic · classical root meanings · Quran usage · flashcards</div>
+    <div class="sub">English &harr; Arabic · classical root meanings · Quran usage · audio · flashcards</div>
   </header>
 
   <div class="tabs">
@@ -103,7 +106,7 @@ const $ = s => document.querySelector(s);
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#039;" }[c]));
 
 async function api(path) {
-  const r = await fetch("https://ilm-api.vercel.app" + path, { headers: { "x-api-key": getKey() } });
+  const r = await fetch(API_BASE + path, { headers: { "x-api-key": getKey() } });
   const data = await r.json().catch(() => ({}));
   if (!r.ok) throw new Error(data.error || "Request failed");
   return data;
@@ -170,7 +173,42 @@ async function translitLookup(q) {
 }
 
 // ---------- audio pronunciation ----------
+const API_BASE = "https://ilm-api.vercel.app";
+const AUDIO_CACHE = new Map(); // word -> object URL of the fetched MP3
+let currentAudio = null;
 let arVoice = null;
+
+// Real recorded-style pronunciation from the Ilm API; falls back to the
+// browser's built-in Arabic voice when offline or on error.
+async function playWord(word, btn) {
+  const w = String(word || "").trim();
+  if (!w) return;
+  if (currentAudio) { currentAudio.pause(); if (currentAudio._btn) currentAudio._btn.classList.remove("playing"); currentAudio = null; }
+  try { speechSynthesis.cancel(); } catch (e) {}
+  let url = AUDIO_CACHE.get(w);
+  if (!url) {
+    if (btn) btn.classList.add("loading");
+    try {
+      const r = await fetch(API_BASE + "/v1/dictionary/audio?word=" + encodeURIComponent(w), { headers: { "x-api-key": getKey() } });
+      if (!r.ok) throw new Error("HTTP " + r.status);
+      url = URL.createObjectURL(await r.blob());
+      AUDIO_CACHE.set(w, url);
+    } catch (e) {
+      speak(w); // graceful fallback: device TTS
+    } finally {
+      if (btn) btn.classList.remove("loading");
+    }
+    if (!url) return;
+  }
+  const a = new Audio(url);
+  a._btn = btn;
+  if (btn) btn.classList.add("playing");
+  a.onended = () => { if (btn) btn.classList.remove("playing"); if (currentAudio === a) currentAudio = null; };
+  a.onerror = () => { if (btn) btn.classList.remove("playing"); if (currentAudio === a) currentAudio = null; speak(w); };
+  currentAudio = a;
+  a.play();
+}
+
 function speak(word) {
   if (!("speechSynthesis" in window)) return;
   const u = new SpeechSynthesisUtterance(String(word).replace(AR_STRIP, ""));
@@ -259,7 +297,7 @@ function wireCards(scope) {
   }));
   scope.querySelectorAll("[data-say]").forEach(b => b.addEventListener("click", ev => {
     ev.stopPropagation();
-    speak(b.dataset.say);
+    playWord(b.dataset.say, b);
   }));
   scope.querySelectorAll(".rootchip, .rchip").forEach(b => b.addEventListener("click", ev => {
     ev.stopPropagation();
@@ -340,7 +378,7 @@ async function loadWotd() {
     const root = roots.roots[Math.abs(epochDay) % roots.roots.length].root;
     const fam = await api(`/v1/dictionary/root/${encodeURIComponent(root)}`);
     const e = fam.entries[0];
-    el.innerHTML = `<div class="wotd-label">📖 WORD OF THE DAY · root ${esc(fam.root)}</div>
+    el.innerHTML = `<button class="speak" data-say="${esc(e.word)}" title="Listen">🔊</button><div class="wotd-label">📖 WORD OF THE DAY · root ${esc(fam.root)}</div>
       <div class="ar" style="margin-top:8px">${esc(e.word)}<span class="pos">${esc(e.pos || "")}</span></div>
       <div class="gloss">${esc(e.gloss_en || "")}</div>
       <div class="note">A new word every day — star it to add it to your study deck</div>
@@ -525,7 +563,7 @@ function review(queue, total) {
   const w = queue[0];
   const fresh = srsAll()[w.word] === undefined || !srsAll()[w.word].seen;
   $("#content").innerHTML = `
-    <p class="note" style="text-align:center">${total - queue.length + 1} / ${total}${fresh ? " · new word" : ""}</p>
+    <p class="note" style="text-align:center">${total - queue.length + 1} / ${total}${fresh ? " · new word" : ""} · <button class="speak" data-say="${esc(w.word)}" style="float:none;font-size:15px;vertical-align:middle" title="Listen">🔊 listen</button></p>
     <div class="card flip" id="fc" style="min-height:200px;display:flex;align-items:center">
       <div class="flip-inner" style="width:100%;min-height:170px">
         <div class="flip-face" style="display:flex;align-items:center;justify-content:center"><div class="ar" style="font-size:40px">${esc(w.word)}</div></div>
@@ -539,6 +577,7 @@ function review(queue, total) {
     </div>`;
   const fc = $("#fc");
   fc.addEventListener("click", () => fc.classList.toggle("flipped"));
+  wireCards($("#content"));
   $("#rKnow").addEventListener("click", () => { srsRecord(w.word, true); review(queue.slice(1), total); });
   $("#rAgain").addEventListener("click", () => { srsRecord(w.word, false); review(queue.slice(1).concat([w]), total); });
 }
