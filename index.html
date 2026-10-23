@@ -26,6 +26,7 @@ h1 { font-size: 22px; margin-top: 4px; font-weight: 700; }
 .searchbar input:focus { outline: none; border-color: var(--gold); }
 .btn { background: var(--gold); color: #0f2121; border: none; padding: 10px 16px; border-radius: 10px; font-weight: 600; cursor: pointer; font-size: 14px; font-family: inherit; }
 .btn.ghost { background: none; border: 1px solid var(--border); color: var(--gold); }
+.btn.small { padding: 6px 12px; font-size: 12.5px; }
 .card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 14px 16px; margin-top: 12px; }
 .ar { font-family: 'Amiri', serif; font-size: 26px; direction: rtl; line-height: 1.8; }
 .pos { display: inline-block; font-size: 10.5px; color: var(--gold); border: 1px solid rgba(201,162,75,.35); border-radius: 8px; padding: 1px 8px; margin-left: 8px; vertical-align: middle; }
@@ -33,6 +34,8 @@ h1 { font-size: 22px; margin-top: 4px; font-weight: 700; }
 .rootchip { display: inline-block; background: rgba(201,162,75,.14); color: var(--gold); font-size: 12px; padding: 3px 10px; border-radius: 12px; margin-top: 8px; cursor: pointer; font-family: 'Amiri', serif; font-size: 15px; }
 .star { float: right; background: none; border: none; color: var(--muted); font-size: 19px; cursor: pointer; padding: 0 2px; }
 .star.on { color: var(--gold); }
+.speak { float: right; background: none; border: none; color: var(--muted); font-size: 16px; cursor: pointer; padding: 0 6px; }
+.speak:hover { color: var(--gold); }
 .note { color: var(--muted); font-size: 12px; font-style: italic; margin-top: 8px; }
 .empty { text-align: center; color: var(--muted); padding: 26px 10px; font-size: 14px; line-height: 1.6; }
 .loading { text-align: center; color: var(--muted); padding: 26px; font-size: 14px; }
@@ -54,6 +57,18 @@ h1 { font-size: 22px; margin-top: 4px; font-weight: 700; }
 #content { min-height: 320px; }
 footer { text-align: center; color: var(--muted); font-size: 11px; margin-top: 26px; }
 a { color: var(--gold); }
+.statsbar { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.stat { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 8px 14px; font-size: 12.5px; color: var(--muted); }
+.stat b { color: var(--gold); font-size: 15px; }
+.wordsbar { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+#installbar { position: fixed; bottom: 0; left: 0; right: 0; background: var(--card); border-top: 1px solid var(--border); padding: 10px 14px; display: none; align-items: center; gap: 10px; z-index: 50; max-width: 640px; margin: 0 auto; }
+#installbar .ibtext { flex: 1; font-size: 12.5px; color: var(--muted); line-height: 1.4; }
+#installbar .ibx { background: none; border: none; color: var(--muted); font-size: 16px; cursor: pointer; padding: 4px; }
+.srs { display: flex; gap: 6px; align-items: center; margin-top: 8px; flex-wrap: wrap; }
+.srschip { font-size: 10.5px; color: var(--muted); border: 1px solid var(--border); border-radius: 8px; padding: 2px 8px; }
+.srschip.due { color: var(--red); border-color: rgba(193,83,61,.4); }
+.qlink { display: inline-block; margin-top: 8px; font-size: 12px; text-decoration: none; border: 1px solid var(--border); border-radius: 10px; padding: 4px 12px; }
+.seclabel { font-size: 10.5px; letter-spacing: 2px; color: var(--gold); font-weight: 600; margin-top: 16px; }
 </style>
 </head>
 <body>
@@ -75,6 +90,12 @@ a { color: var(--gold); }
   <footer>Ilm Dictionary · built on the Ilm API · works offline once installed</footer>
 </div>
 
+<div id="installbar">
+  <div class="ibtext">📲 <b style="color:var(--text)">Install Ilm Dictionary</b> on your home screen for offline study</div>
+  <button class="btn small" id="ibinstall">Install</button>
+  <button class="ibx" id="ibclose">✕</button>
+</div>
+
 <script>
 const DEFAULT_KEY = "ilm_41cf502bdd0b2b07650bdb302edece3c";
 const getKey = () => localStorage.getItem("ilm_key") || DEFAULT_KEY;
@@ -88,7 +109,84 @@ async function api(path) {
   return data;
 }
 
-// ---- my words (vocabulary book) ----
+// ---------- transliteration: match romanized queries like "sabr" ----------
+const AR_STRIP = /[\u064B-\u0652\u0640\u0670]/g; // harakat, tatweel
+const AR_VOWELS = "\u0627\u0623\u0625\u0622\u0648\u064A\u0649\u0624\u0626\u0621"; // alif/hamza forms, waw, ya, alif maqsura
+function arSkeleton(w) {
+  // consonant skeleton of an Arabic word: diacritics and long vowels removed
+  w = String(w || "").replace(AR_STRIP, "").replace(/-/g, "");
+  let out = "";
+  for (const ch of w) { if (!AR_VOWELS.includes(ch)) out += ch; }
+  return out;
+}
+const AR2LAT = { "\u0621":"'", "\u0622":"a", "\u0623":"'", "\u0625":"i", "\u0626":"y", "\u0624":"w", "\u0627":"a", "\u0628":"b", "\u0629":"h", "\u062A":"t", "\u062B":"th", "\u062C":"j", "\u062D":"h", "\u062E":"kh", "\u062F":"d", "\u0630":"dh", "\u0631":"r", "\u0632":"z", "\u0633":"s", "\u0634":"sh", "\u0635":"s", "\u0636":"d", "\u0637":"t", "\u0638":"z", "\u0639":"'", "\u063A":"gh", "\u0640":"", "\u0641":"f", "\u0642":"q", "\u0643":"k", "\u0644":"l", "\u0645":"m", "\u0646":"n", "\u0647":"h", "\u0648":"w", "\u0649":"a", "\u064A":"y" };
+function latSkeleton(q) {
+  // consonant skeleton of a romanized query: digraphs first, vowels dropped
+  q = String(q || "").toLowerCase().trim().replace(/[^a-z]/g, "");
+  let out = "";
+  for (let i = 0; i < q.length; i++) {
+    const two = q.slice(i, i + 2);
+    if (["th","kh","dh","sh","gh"].includes(two)) { out += two; i++; continue; }
+    const c = q[i];
+    if (!"aeiou".includes(c)) out += c;
+  }
+  return out;
+}
+const ROOTS_CACHE_KEY = "ildict_roots_cache";
+async function getRootsCached() {
+  try {
+    const c = JSON.parse(localStorage.getItem(ROOTS_CACHE_KEY) || "null");
+    if (c && Date.now() - c.t < 7 * 86400000) return c.data;
+  } catch (e) {}
+  const data = await api("/v1/roots");
+  try { localStorage.setItem(ROOTS_CACHE_KEY, JSON.stringify({ t: Date.now(), data })); } catch (e) {}
+  return data;
+}
+function normLat(sk) { return sk.replace(/^'+/, "").replace(/[wy]/g, "").replace(/h+$/, ""); }
+function rootSkeletonLat(root) {
+  const sk = arSkeleton(root);
+  if (!sk) return "";
+  return normLat([...sk].map(c => AR2LAT[c] !== undefined ? AR2LAT[c] : c).join(""));
+}
+async function translitLookup(q) {
+  const sk = latSkeleton(q);
+  if (!sk) return [];
+  const roots = await getRootsCached();
+  const withSk = roots.map(r => ({ r, rsk: rootSkeletonLat(r.root_arabic) })).filter(x => x.rsk);
+  // exact skeleton match (handles ta marbuta "h", weak letters, ayn)
+  let hits = withSk.filter(x => x.rsk === normLat(sk)).map(x => x.r);
+  // prefix/suffix forms: "muslim" contains root slm, "istaqam" contains qm
+  if (hits.length === 0) {
+    hits = withSk.filter(x => x.rsk.length >= 2 && sk.includes(x.rsk)).map(x => x.r);
+  }
+  if (hits.length === 0) return [];
+  const families = await Promise.all(hits.slice(0, 3).map(r => api(`/v1/dictionary/root/${encodeURIComponent(r.root_arabic)}`).catch(() => null)));
+  const out = [];
+  families.forEach((f, ix) => {
+    if (!f) return;
+    out.push({ root: f.root, entry_count: f.entry_count, quranic: f.quranic || {}, entries: (f.entries || []).slice(0, 12) });
+  });
+  return out;
+}
+
+// ---------- audio pronunciation ----------
+let arVoice = null;
+function speak(word) {
+  if (!("speechSynthesis" in window)) return;
+  const u = new SpeechSynthesisUtterance(String(word).replace(AR_STRIP, ""));
+  u.lang = "ar-SA";
+  if (!arVoice) {
+    const vs = speechSynthesis.getVoices();
+    arVoice = vs.find(v => /^ar/i.test(v.lang)) || null;
+  }
+  if (arVoice) u.voice = arVoice;
+  u.rate = 0.85;
+  speechSynthesis.cancel();
+  speechSynthesis.speak(u);
+}
+if ("speechSynthesis" in window) speechSynthesis.onvoiceschanged = () => { arVoice = null; };
+
+// ---------- my words (vocabulary book) ----------
 const WORDS_KEY = "ildict_words";
 const myWords = () => JSON.parse(localStorage.getItem(WORDS_KEY) || "[]");
 function isStarred(w) { return myWords().some(m => m.word === w); }
@@ -100,16 +198,55 @@ function toggleStar(word, gloss, root) {
   return ix < 0;
 }
 
-// ---- views ----
+// ---------- spaced repetition (SRS) ----------
+const SRS_KEY = "ildict_srs";
+const STREAK_KEY = "ildict_streak";
+const SRS_INTERVALS = [1, 2, 4, 7, 15, 30, 60]; // days
+const srsAll = () => JSON.parse(localStorage.getItem(SRS_KEY) || "{}");
+const dayMs = 86400000;
+const srsDue = w => { const s = srsAll()[w]; return !s || s.due <= Date.now(); };
+function srsRecord(word, knew) {
+  const all = srsAll();
+  const s = all[word] || { level: 0, due: 0 };
+  s.level = knew ? Math.min((s.level || 0) + 1, SRS_INTERVALS.length - 1) : 0;
+  s.due = knew ? Date.now() + SRS_INTERVALS[s.level] * dayMs : Date.now();
+  s.seen = Date.now();
+  all[word] = s;
+  localStorage.setItem(SRS_KEY, JSON.stringify(all));
+}
+function dueCount() { return myWords().filter(w => srsDue(w.word)).length; }
+function streakBump() {
+  const st = JSON.parse(localStorage.getItem(STREAK_KEY) || '{"count":0,"last":""}');
+  const today = new Date().toDateString();
+  if (st.last === today) return st;
+  const yest = new Date(Date.now() - dayMs).toDateString();
+  st.count = st.last === yest ? st.count + 1 : 1;
+  st.last = today;
+  localStorage.setItem(STREAK_KEY, JSON.stringify(st));
+  return st;
+}
+const streakGet = () => JSON.parse(localStorage.getItem(STREAK_KEY) || '{"count":0,"last":""}');
+
+// ---------- views ----------
 let tab = "search";
+
+function srsChips(word) {
+  const s = srsAll()[word];
+  if (!s || !s.level) return "";
+  const days = Math.max(0, Math.ceil((s.due - Date.now()) / dayMs));
+  return `<div class="srs"><span class="srschip">✓ known ×${s.level}</span><span class="srschip ${days === 0 ? "due" : ""}">${days === 0 ? "due for review" : "reviews in " + days + "d"}</span></div>`;
+}
 
 function wordCard(e, opts = {}) {
   const starred = isStarred(e.word);
   return `<div class="card" ${opts.tapword ? `data-w="${esc(e.word)}"` : ""}>
+    <button class="speak" data-say="${esc(e.word)}" title="Listen">🔊</button>
     <button class="star ${starred ? "on" : ""}" data-star="${esc(e.word)}" data-gloss="${esc((e.gloss_en||"").slice(0,120))}" data-root="${esc(e.root||"")}">${starred ? "★" : "☆"}</button>
     <div class="ar">${esc(e.word)}<span class="pos">${esc(e.pos || "")}</span></div>
     <div class="gloss">${esc(e.gloss_en || "")}</div>
     ${e.root ? `<span class="rootchip" data-root="${esc(e.root)}">جذر ${esc(e.root)}</span>` : ""}
+    ${opts.quran !== false ? `<a class="qlink" href="https://quran.com/search?q=${encodeURIComponent(String(e.word).replace(AR_STRIP, ""))}" target="_blank" rel="noopener">📖 See in the Quran</a>` : ""}
+    ${opts.srs ? srsChips(e.word) : ""}
     ${opts.tapword ? `<div class="note">Tap the word for all senses</div>` : ""}
   </div>`;
 }
@@ -119,6 +256,10 @@ function wireCards(scope) {
     ev.stopPropagation();
     const now = toggleStar(b.dataset.star, b.dataset.gloss, b.dataset.root);
     document.querySelectorAll(`[data-star="${CSS.escape(b.dataset.star)}"]`).forEach(x => { x.textContent = now ? "★" : "☆"; x.classList.toggle("on", now); });
+  }));
+  scope.querySelectorAll("[data-say]").forEach(b => b.addEventListener("click", ev => {
+    ev.stopPropagation();
+    speak(b.dataset.say);
   }));
   scope.querySelectorAll(".rootchip, .rchip").forEach(b => b.addEventListener("click", ev => {
     ev.stopPropagation();
@@ -131,7 +272,7 @@ function wireCards(scope) {
 async function renderSearch() {
   const el = $("#content");
   el.innerHTML = `
-    <div class="searchbar"><input id="q" placeholder="English meaning or Arabic word — e.g. patience, صبر" /><button class="btn" id="go">Search</button></div>
+    <div class="searchbar"><input id="q" placeholder="English, Arabic or romanized — e.g. patience, صبر, sabr" /><button class="btn" id="go">Search</button></div>
     <div class="card wcard" id="wotd"><div class="wotd-label">📖 WORD OF THE DAY</div><div class="loading">…</div></div>
     <div id="results"></div>`;
   const q = $("#q");
@@ -139,15 +280,39 @@ async function renderSearch() {
     const v = q.value.trim();
     if (!v) return;
     $("#results").innerHTML = `<div class="loading">Searching…</div>`;
+    const isArabic = /[\u0600-\u06FF]/.test(v);
     try {
+      let html = "", translitDone = false;
+      // transliteration matches (romanized queries) — best signal, shown first
+      if (!isArabic) {
+        try {
+          const fams = await translitLookup(v);
+          if (fams.length) {
+            translitDone = true;
+            html += `<p class="seclabel">ARABIC MATCHES FOR "${esc(v.toUpperCase())}"</p>`;
+            for (const f of fams) {
+              const qq = f.quranic || {};
+              html += `<div class="card">
+                <div class="ar" style="font-size:32px;text-align:center">${esc(f.root)}</div>
+                ${qq.meaning ? `<div class="gloss" style="text-align:center">${esc(qq.meaning)}</div>` : ""}
+                <div class="note" style="text-align:center">matched your spelling "${esc(v)}" · ${esc(f.entry_count)} word(s) from this root${qq.occurrence_count ? " · appears " + esc(qq.occurrence_count) + "× in the Quran" : ""}</div>
+              </div>`;
+              html += f.entries.map(e => wordCard(e, { tapword: true, quran: false })).join("");
+            }
+          }
+        } catch (e2) { /* transliteration is best-effort */ }
+      }
       const data = await api(`/v1/dictionary/search?q=${encodeURIComponent(v)}`);
-      $("#results").innerHTML = data.count === 0
-        ? `<div class="empty">No entry found for "${esc(v)}".<br>Try an English meaning, an Arabic word,<br>or browse the Roots tab.</div>`
-        : `<p class="note" style="text-align:left">${data.count} entr${data.count === 1 ? "y" : "ies"} for "${esc(v)}"</p>` +
-          data.results.map(e => wordCard(e, { tapword: true })).join("");
+      const seen = new Set();
+      const glossResults = (data.results || []).filter(e => { const k = e.word + "|" + (e.gloss_en || ""); if (seen.has(k)) return false; seen.add(k); return true; });
+      if (glossResults.length) {
+        html += (translitDone ? `<p class="seclabel">ALSO — "${esc(v)}" IN ENGLISH GLOSSES</p>` : `<p class="note" style="text-align:left">${data.count} entr${data.count === 1 ? "y" : "ies"} for "${esc(v)}"</p>`);
+        html += glossResults.map(e => wordCard(e, { tapword: true })).join("");
+      }
+      $("#results").innerHTML = html || `<div class="empty">No entry found for "${esc(v)}".<br>Try an English meaning, an Arabic word, a romanized<br>spelling (sabr, kitab, rahma), or browse the Roots tab.</div>`;
       wireCards($("#results"));
     } catch (e) {
-      $("#results").innerHTML = `<div class="empty">Search failed: ${esc(e.message)}</div>`;
+      $("#results").innerHTML = `<div class="empty">Search failed: ${esc(e.message)}<br><span style="font-size:11.5px">Starred words and flashcards still work offline in My Words.</span></div>`;
     }
   };
   $("#go").addEventListener("click", run);
@@ -181,7 +346,7 @@ async function showWord(w) {
     const d = await api(`/v1/dictionary/word/${encodeURIComponent(w)}`);
     el.innerHTML = `<button class="back" id="back2">← Back</button>
       <p class="note" style="text-align:left">All senses of ${esc(w)} · its root appears ${esc(d.quran_occurrences_of_root)}× in the Quran</p>` +
-      (d.entries || []).map(e => wordCard(e, {})).join("");
+      (d.entries || []).map(e => wordCard(e, { srs: true })).join("");
     $("#back2").addEventListener("click", () => { tab === "search" ? renderSearch() : renderWords(); });
     wireCards(el);
   } catch (e) {
@@ -230,6 +395,7 @@ async function showRoot(root) {
         <div class="ar" style="font-size:32px;text-align:center">${esc(d.root)}</div>
         ${q.meaning ? `<div class="gloss" style="text-align:center">${esc(q.meaning)}</div>` : ""}
         <div class="note" style="text-align:center">${esc(d.entry_count)} word(s) built on this root${q.occurrence_count ? " · appears " + esc(q.occurrence_count) + "× in the Quran" : ""}</div>
+        <div style="text-align:center"><a class="qlink" href="https://quran.com/search?q=${encodeURIComponent(d.root)}" target="_blank" rel="noopener">📖 See this root in the Quran</a></div>
       </div>
       <p class="note" style="text-align:left">Every word derived from this root:</p>` +
       (d.entries || []).map(e => wordCard(e, { tapword: false })).join("");
@@ -249,32 +415,106 @@ function renderWords() {
     el.innerHTML = `<div class="empty">Your vocabulary book is empty.<br>Star ☆ any word while searching or browsing roots<br>and it will land here as a flashcard.</div>`;
     return;
   }
+  const due = dueCount();
+  const st = streakGet();
   el.innerHTML = `
-    <div class="card" style="display:flex;justify-content:space-between;align-items:center">
-      <span><b style="color:var(--gold)">${ws.length}</b> saved word${ws.length === 1 ? "" : "s"}</span>
-      <button class="btn" id="review">Review flashcards</button>
+    <div class="statsbar">
+      <span class="stat"><b>${ws.length}</b> saved</span>
+      <span class="stat"><b>${due}</b> due today</span>
+      <span class="stat"><b>${st.count > 0 ? "🔥 " + st.count : "—"}</b> day streak</span>
+    </div>
+    <div class="wordsbar">
+      <button class="btn" id="review">Review flashcards${due ? " (" + due + " due)" : ""}</button>
+      <button class="btn ghost small" id="export">⬇ Export</button>
+      <button class="btn ghost small" id="importBtn">⬆ Import</button>
+      <input type="file" id="importFile" accept="application/json,.json" style="display:none" />
     </div>
     ${ws.map(w => `<div class="card">
+      <button class="speak" data-say="${esc(w.word)}" title="Listen">🔊</button>
       <button class="star on" data-star="${esc(w.word)}" data-gloss="${esc(w.gloss)}" data-root="${esc(w.root)}">★</button>
       <div class="ar">${esc(w.word)}</div>
       <div class="gloss">${esc(w.gloss)}</div>
       ${w.root ? `<span class="rootchip" data-root="${esc(w.root)}">جذر ${esc(w.root)}</span>` : ""}
+      ${srsChips(w.word)}
     </div>`).join("")}
-    <p class="note">Star a word again to remove it</p>`;
-  $("#review").addEventListener("click", () => review(ws.slice()));
+    <p class="note">Star a word again to remove it · review daily to grow your streak</p>`;
+  $("#review").addEventListener("click", () => review(buildQueue()));
+  $("#export").addEventListener("click", exportDeck);
+  $("#importBtn").addEventListener("click", () => $("#importFile").click());
+  $("#importFile").addEventListener("change", importDeck);
   wireCards(el);
+}
+
+function buildQueue() {
+  // due words first, then words never studied, then the rest
+  const ws = myWords();
+  const srs = srsAll();
+  const due = [], fresh = [], later = [];
+  for (const w of ws) {
+    const s = srs[w.word];
+    if (!s || !s.seen) fresh.push(w);
+    else if (s.due <= Date.now()) due.push(w);
+    else later.push(w);
+  }
+  due.sort((a, b) => srs[a.word].due - srs[b.word].due);
+  return due.concat(fresh).concat(later);
+}
+
+function exportDeck() {
+  const payload = {
+    app: "ilm-dictionary", version: 1, exported: new Date().toISOString(),
+    words: myWords(), srs: srsAll(), streak: streakGet()
+  };
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  const d = new Date().toISOString().slice(0, 10);
+  a.download = `ilm-dictionary-backup-${d}.json`;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+}
+
+function importDeck(ev) {
+  const f = ev.target.files[0];
+  if (!f) return;
+  const r = new FileReader();
+  r.onload = () => {
+    try {
+      const p = JSON.parse(r.result);
+      if (!Array.isArray(p.words)) throw new Error("Not an Ilm Dictionary backup file");
+      const ws = myWords();
+      const by = new Map(ws.map(w => [w.word, w]));
+      for (const w of p.words) {
+        const cur = by.get(w.word);
+        if (!cur || (w.added || 0) > (cur.added || 0)) by.set(w.word, w);
+      }
+      localStorage.setItem(WORDS_KEY, JSON.stringify([...by.values()]));
+      if (p.srs) {
+        const srs = srsAll();
+        for (const [k, v] of Object.entries(p.srs)) srs[k] = v;
+        localStorage.setItem(SRS_KEY, JSON.stringify(srs));
+      }
+      renderWords();
+    } catch (e) {
+      alert("Import failed: " + e.message);
+    }
+    ev.target.value = "";
+  };
+  r.readAsText(f);
 }
 
 function review(queue, total) {
   total = total || queue.length;
   if (queue.length === 0) {
-    $("#content").innerHTML = `<div class="empty">Session complete — ${total} card${total === 1 ? "" : "s"} reviewed.<br>May Allah increase you in knowledge.</div><div style="text-align:center;margin:14px"><button class="btn ghost" id="againAll">Back to My Words</button></div>`;
+    const st = streakBump();
+    $("#content").innerHTML = `<div class="empty">Session complete — ${total} card${total === 1 ? "" : "s"} reviewed.<br>🔥 ${st.count}-day review streak — keep it alive!<br>May Allah increase you in knowledge.</div><div style="text-align:center;margin:14px"><button class="btn ghost" id="againAll">Back to My Words</button></div>`;
     $("#againAll").addEventListener("click", renderWords);
     return;
   }
   const w = queue[0];
+  const fresh = srsAll()[w.word] === undefined || !srsAll()[w.word].seen;
   $("#content").innerHTML = `
-    <p class="note" style="text-align:center">${total - queue.length + 1} / ${total}</p>
+    <p class="note" style="text-align:center">${total - queue.length + 1} / ${total}${fresh ? " · new word" : ""}</p>
     <div class="card flip" id="fc" style="min-height:200px;display:flex;align-items:center">
       <div class="flip-inner" style="width:100%;min-height:170px">
         <div class="flip-face" style="display:flex;align-items:center;justify-content:center"><div class="ar" style="font-size:40px">${esc(w.word)}</div></div>
@@ -288,8 +528,8 @@ function review(queue, total) {
     </div>`;
   const fc = $("#fc");
   fc.addEventListener("click", () => fc.classList.toggle("flipped"));
-  $("#rKnow").addEventListener("click", () => review(queue.slice(1), total));
-  $("#rAgain").addEventListener("click", () => review(queue.slice(1).concat([w]), total));
+  $("#rKnow").addEventListener("click", () => { srsRecord(w.word, true); review(queue.slice(1), total); });
+  $("#rAgain").addEventListener("click", () => { srsRecord(w.word, false); review(queue.slice(1).concat([w]), total); });
 }
 
 // ---- tabs ----
@@ -303,7 +543,27 @@ document.querySelectorAll(".tabs button").forEach(b => b.addEventListener("click
 }));
 renderSearch();
 
-// PWA install
+// ---- PWA install prompt ----
+let deferredPrompt = null;
+window.addEventListener("beforeinstallprompt", e => {
+  e.preventDefault();
+  deferredPrompt = e;
+  const standalone = matchMedia("(display-mode: standalone)").matches || localStorage.getItem("ildict_noinstall") === "1";
+  if (!standalone) $("#installbar").style.display = "flex";
+});
+$("#ibinstall").addEventListener("click", async () => {
+  if (!deferredPrompt) return;
+  deferredPrompt.prompt();
+  await deferredPrompt.userChoice;
+  deferredPrompt = null;
+  $("#installbar").style.display = "none";
+});
+$("#ibclose").addEventListener("click", () => {
+  localStorage.setItem("ildict_noinstall", "1");
+  $("#installbar").style.display = "none";
+});
+
+// PWA
 if ("serviceWorker" in navigator) navigator.serviceWorker.register("./sw.js");
 </script>
 </body>
