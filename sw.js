@@ -1,5 +1,5 @@
 // Ilm Dictionary service worker — app shell + API responses cached for offline study
-const CACHE = "ilm-dict-v3";
+const CACHE = "ilm-dict-v4";
 const SHELL = ["./", "./index.html", "./manifest.webmanifest", "./icon-192.png", "./icon-512.png"];
 const API = "https://ilm-api.vercel.app";
 
@@ -35,9 +35,14 @@ function apiFetch(req) {
   ));
 }
 
+const FONT_HOSTS = ["fonts.googleapis.com", "fonts.gstatic.com"];
+
 self.addEventListener("fetch", e => {
   const url = new URL(e.request.url);
   if (e.request.method !== "GET") return;
   if (url.origin === location.origin) e.respondWith(shellFetch(e.request));
   else if (url.origin === API) e.respondWith(apiFetch(e.request));
+  // Google Fonts are versioned/immutable — cache-first keeps the Amiri/Inter
+  // letterforms available offline instead of falling back to system fonts
+  else if (FONT_HOSTS.includes(url.hostname)) e.respondWith(shellFetch(e.request));
 });

@@ -93,7 +93,7 @@ a { color: var(--gold); }
 <div id="installbar">
   <div class="ibtext">📲 <b style="color:var(--text)">Install Ilm Dictionary</b> on your home screen for offline study</div>
   <button class="btn small" id="ibinstall">Install</button>
-  <button class="ibx" id="ibclose">✕</button>
+  <button class="ibx" id="ibclose" aria-label="Dismiss install banner">✕</button>
 </div>
 
 <script>
@@ -161,12 +161,12 @@ async function translitLookup(q) {
   }
   if (hits.length === 0) return [];
   const families = await Promise.all(hits.slice(0, 3).map(r => api(`/v1/dictionary/root/${encodeURIComponent(r.root_arabic)}`).catch(() => null)));
-  const out = [];
-  families.forEach((f, ix) => {
-    if (!f) return;
-    out.push({ root: f.root, entry_count: f.entry_count, quranic: f.quranic || {}, entries: (f.entries || []).slice(0, 12) });
+  return hits.slice(0, 3).map((r, i) => {
+    const f = families[i];
+    if (f) return { root: f.root, entry_count: f.entry_count, quranic: f.quranic || {}, entries: (f.entries || []).slice(0, 12) };
+    // offline / never opened: still show the matched root from the cached root list
+    return { root: r.root_arabic, entry_count: 0, quranic: { meaning: r.meaning || "", occurrence_count: r.occurrence_count || 0 }, entries: [] };
   });
-  return out;
 }
 
 // ---------- audio pronunciation ----------
@@ -272,7 +272,7 @@ function wireCards(scope) {
 async function renderSearch() {
   const el = $("#content");
   el.innerHTML = `
-    <div class="searchbar"><input id="q" placeholder="English, Arabic or romanized — e.g. patience, صبر, sabr" /><button class="btn" id="go">Search</button></div>
+    <div class="searchbar"><input id="q" aria-label="Search words" placeholder="English, Arabic or romanized — e.g. patience, صبر, sabr" /><button class="btn" id="go">Search</button></div>
     <div class="card wcard" id="wotd"><div class="wotd-label">📖 WORD OF THE DAY</div><div class="loading">…</div></div>
     <div id="results"></div>`;
   const q = $("#q");
@@ -297,12 +297,23 @@ async function renderSearch() {
                 ${qq.meaning ? `<div class="gloss" style="text-align:center">${esc(qq.meaning)}</div>` : ""}
                 <div class="note" style="text-align:center">matched your spelling "${esc(v)}" · ${esc(f.entry_count)} word(s) from this root${qq.occurrence_count ? " · appears " + esc(qq.occurrence_count) + "× in the Quran" : ""}</div>
               </div>`;
-              html += f.entries.map(e => wordCard(e, { tapword: true, quran: false })).join("");
+              html += f.entries.length
+                ? f.entries.map(e => wordCard(e, { tapword: true, quran: false })).join("")
+                : `<span class="rootchip" data-root="${esc(f.root)}">جذر ${esc(f.root)} — open the full family</span>`;
             }
           }
         } catch (e2) { /* transliteration is best-effort */ }
       }
-      const data = await api(`/v1/dictionary/search?q=${encodeURIComponent(v)}`);
+      let data = null;
+      try { data = await api(`/v1/dictionary/search?q=${encodeURIComponent(v)}`); }
+      catch (e3) {
+        if (translitDone) { data = null; } else { throw e3; }
+      }
+      if (!data) {
+        $("#results").innerHTML = html + `<div class="note" style="text-align:center;margin-top:12px">English gloss search unavailable offline — Arabic matches above are from your cache</div>`;
+        wireCards($("#results"));
+        return;
+      }
       const seen = new Set();
       const glossResults = (data.results || []).filter(e => { const k = e.word + "|" + (e.gloss_en || ""); if (seen.has(k)) return false; seen.add(k); return true; });
       if (glossResults.length) {
@@ -358,14 +369,14 @@ async function showWord(w) {
 // ---- ROOTS TAB ----
 async function renderRoots() {
   const el = $("#content");
-  el.innerHTML = `<div class="searchbar"><input id="rq" placeholder="Filter roots by meaning — e.g. mercy, knowledge" /><button class="btn" id="rgo">Filter</button></div>
+  el.innerHTML = `<div class="searchbar"><input id="rq" aria-label="Filter roots" placeholder="Filter roots by meaning — e.g. mercy, knowledge" /><button class="btn" id="rgo">Filter</button></div>
     <p class="note" style="margin-top:10px">Loading roots…</p>`;
   try {
     const data = await api("/v1/roots");
     let shown = 100;
     const draw = () => {
       const f = ($("#rq").value || "").trim().toLowerCase();
-      const list = f ? data.filter(r => (r.meaning || "").toLowerCase().includes(f) || r.root_arabic.includes(f)) : data;
+      const list = f ? data.filter(r => (r.meaning || "").toLowerCase().includes(f) || r.root_arabic.includes(f) || rootSkeletonLat(r.root_arabic).startsWith(latSkeleton(f))) : data;
       const items = list.slice(0, shown).map(r => `
         <button class="rchip" data-root="${esc(r.root_arabic)}">
           <span class="ra">${esc(r.root_arabic)} <span style="opacity:.6;font-size:12px">(${esc(r.occurrence_count)})</span></span>
@@ -395,7 +406,7 @@ async function showRoot(root) {
         <div class="ar" style="font-size:32px;text-align:center">${esc(d.root)}</div>
         ${q.meaning ? `<div class="gloss" style="text-align:center">${esc(q.meaning)}</div>` : ""}
         <div class="note" style="text-align:center">${esc(d.entry_count)} word(s) built on this root${q.occurrence_count ? " · appears " + esc(q.occurrence_count) + "× in the Quran" : ""}</div>
-        <div style="text-align:center"><a class="qlink" href="https://quran.com/search?q=${encodeURIComponent(d.root)}" target="_blank" rel="noopener">📖 See this root in the Quran</a></div>
+        <div style="text-align:center"><a class="qlink" href="https://quran.com/search?q=${encodeURIComponent(String(d.root).replace(/-/g, ""))}" target="_blank" rel="noopener">📖 See this root in the Quran</a></div>
       </div>
       <p class="note" style="text-align:left">Every word derived from this root:</p>` +
       (d.entries || []).map(e => wordCard(e, { tapword: false })).join("");
@@ -431,7 +442,7 @@ function renderWords() {
     </div>
     ${ws.map(w => `<div class="card">
       <button class="speak" data-say="${esc(w.word)}" title="Listen">🔊</button>
-      <button class="star on" data-star="${esc(w.word)}" data-gloss="${esc(w.gloss)}" data-root="${esc(w.root)}">★</button>
+      <button class="star on" data-star="${esc(w.word)}" data-gloss="${esc(w.gloss)}" data-root="${esc(w.root)}" aria-label="Save to My Words">★</button>
       <div class="ar">${esc(w.word)}</div>
       <div class="gloss">${esc(w.gloss)}</div>
       ${w.root ? `<span class="rootchip" data-root="${esc(w.root)}">جذر ${esc(w.root)}</span>` : ""}
