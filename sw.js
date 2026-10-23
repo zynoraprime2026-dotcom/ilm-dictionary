@@ -1,5 +1,5 @@
 // Ilm Dictionary service worker — app shell + API responses cached for offline study
-const CACHE = "ilm-dict-v5";
+const CACHE = "ilm-dict-v6";
 const SHELL = ["./", "./index.html", "./manifest.webmanifest", "./icon-192.png", "./icon-512.png"];
 const API = "https://ilm-api.vercel.app";
 
