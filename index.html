@@ -110,7 +110,176 @@ const getKey = () => localStorage.getItem("ilm_key") || DEFAULT_KEY;
 const $ = s => document.querySelector(s);
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#039;" }[c]));
 
+// ---------- offline pack: the whole dictionary stored on the device ----------
+let PACK = null; // { words, roots, groups, byRoot, rootMeta, byLetter }
+
+function plainAr(w) {
+  return String(w || "").replace(/[\u064B-\u065F\u0670\u06D6-\u06DC\u06DF-\u06E8\u06EA-\u06ED\u0640\s-]/g, "");
+}
+function packNormRoot(r) { return plainAr(r); }
+
+function buildIndexes(p) {
+  const groups = new Map(), byRoot = new Map(), byLetter = new Map();
+  for (const e of p.words) {
+    const pl = plainAr(e.word);
+    if (!groups.has(pl)) groups.set(pl, []);
+    groups.get(pl).push(e);
+    if (e.root) {
+      const rk = packNormRoot(e.root);
+      if (!byRoot.has(rk)) byRoot.set(rk, []);
+      byRoot.get(rk).push(e);
+    }
+    const ch = pl[0] || "";
+    const letter = "\u0627\u0623\u0625\u0622\u0671".includes(ch) ? "\u0627" : ch;
+    if (!byLetter.has(letter)) byLetter.set(letter, []);
+    byLetter.get(letter).push(e);
+  }
+  const rootMeta = new Map();
+  for (const r of p.roots || []) rootMeta.set(packNormRoot(r.root_arabic), r);
+  return { ...p, groups, byRoot, rootMeta, byLetter, total: p.words.length };
+}
+
+// serve a dictionary GET from the pack, mirroring the API's response shapes
+function localServe(path) {
+  const packRootOcc = rk => {
+    const m = PACK.rootMeta.get(rk);
+    return m && m.occurrence_count ? m.occurrence_count : 0;
+  };
+  let m;
+  if ((m = path.match(/^\/v1\/dictionary\/search\?q=([^&]+)/))) {
+    const q = decodeURIComponent(m[1]);
+    const isArabic = /[\u0600-\u06FF]/.test(q);
+    let results = [];
+    if (isArabic) {
+      const pl = plainAr(q);
+      for (const [k, es] of PACK.groups) {
+        if (k === pl || k.startsWith(pl)) results = results.concat(es);
+        if (results.length >= 50) break;
+      }
+    } else {
+      const needle = q.toLowerCase();
+      for (const e of PACK.words) {
+        if (String(e.gloss_en || "").toLowerCase().includes(needle)) results.push(e);
+        if (results.length >= 50) break;
+      }
+    }
+    return { offlineOnly: true, data: { query: q, language: "en", count: results.length, results } };
+  }
+  if ((m = path.match(/^\/v1\/dictionary\/word\/([^?]+)/))) {
+    const w = decodeURIComponent(m[1]);
+    const es = PACK.groups.get(plainAr(w)) || [];
+    const rk = es[0] && es[0].root ? packNormRoot(es[0].root) : null;
+    return { data: { word: w, language: "en", quran_occurrences_of_root: rk ? packRootOcc(rk) : 0, entries: es } };
+  }
+  if ((m = path.match(/^\/v1\/dictionary\/words\?letter=([^&]+)&offset=(\d+)&limit=(\d+)/))) {
+    const letter = decodeURIComponent(m[1]);
+    const ch = plainAr(letter) || "\u0627";
+    const l = PACK.byLetter.get(ch) || [];
+    const offset = parseInt(m[2], 10) || 0;
+    const limit = parseInt(m[3], 10) || 50;
+    return { data: { letter, offset, count: Math.min(limit, l.length - offset), total: l.length, words: l.slice(offset, offset + limit) } };
+  }
+  if ((m = path.match(/^\/v1\/dictionary\/root\/([^?]+)/))) {
+    const rk = packNormRoot(decodeURIComponent(m[1]));
+    const es = PACK.byRoot.get(rk) || [];
+    const meta = PACK.rootMeta.get(rk) || {};
+    return { data: {
+      root: (es[0] && es[0].root) || decodeURIComponent(m[1]),
+      quranic: meta.root_arabic ? { root_arabic: meta.root_arabic, meaning: meta.meaning, occurrence_count: meta.occurrence_count } : {},
+      entry_count: es.length,
+      entries: es
+    } };
+  }
+  if (path === "/v1/dictionary/roots") {
+    const roots = [...PACK.byRoot.entries()].map(([rk, es]) => ({
+      root: es[0].root, entry_count: es.length,
+      quran_occurrences: packRootOcc(rk)
+    })).sort((a, b) => b.entry_count - a.entry_count || (a.root < b.root ? -1 : 1));
+    return { data: { count: roots.length, roots } };
+  }
+  if (path === "/v1/roots" || path.startsWith("/v1/roots?")) {
+    const roots = (PACK.roots || []).map(r => ({ root: r.root_arabic, root_arabic: r.root_arabic, meaning: r.meaning, occurrence_count: r.occurrence_count }));
+    return { data: { count: roots.length, roots } };
+  }
+  return null;
+}
+
+// IndexedDB helpers — 4-6MB pack is too big for localStorage
+function idbOpen() {
+  return new Promise((res, rej) => {
+    const rq = indexedDB.open("ildict-pack", 1);
+    rq.onupgradeneeded = () => rq.result.createObjectStore("pack");
+    rq.onsuccess = () => res(rq.result);
+    rq.onerror = () => rej(rq.error);
+  });
+}
+async function idbAction(mode, method) {
+  const db = await idbOpen();
+  return new Promise((res, rej) => {
+    const t = db.transaction("pack", mode).objectStore("pack")[method]("v1");
+    t.onsuccess = () => res(t.result);
+    t.onerror = () => rej(t.error);
+  });
+}
+const packGet = () => idbAction("readonly", "get").catch(() => null);
+const packPut = v => idbAction("readwrite", "put").then(() => v);
+const packDel = () => idbAction("readwrite", "delete").catch(() => {});
+
+async function downloadPack(onProgress) {
+  const r = await fetch(API_BASE + "/v1/dictionary/offline", { headers: { "x-api-key": getKey() } });
+  if (!r.ok) throw new Error("Download failed");
+  const total = +(r.headers.get("content-length") || 4800000);
+  let got = 0;
+  const chunks = [];
+  const reader = r.body.getReader();
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    chunks.push(value);
+    got += value.length;
+    onProgress(Math.min(99, Math.round(got / total * 100)));
+  }
+  const blob = new Blob(chunks);
+  const data = JSON.parse(await blob.text());
+  await packPut({ words: data.words, roots: data.roots });
+  PACK = buildIndexes({ words: data.words, roots: data.roots });
+  return data.words.length;
+}
+const removePack = async () => { await packDel(); PACK = null; };
+
+function offlineCardHTML() {
+  if (PACK) return `<div class="card" style="display:flex;justify-content:space-between;align-items:center;gap:10px">
+    <span style="font-size:13px">✓ <b style="color:var(--gold)">${(PACK.total || 0).toLocaleString()}</b> words saved on this device — the whole dictionary works offline</span>
+    <button class="btn ghost" id="packDel" style="font-size:12px;padding:6px 10px">Remove</button>
+  </div>`;
+  return `<div class="card" style="display:flex;justify-content:space-between;align-items:center;gap:10px">
+    <span style="font-size:13px">📥 Save the <b style="color:var(--gold)">whole dictionary</b> (36,500+ words, ~2 MB) for fully offline study</span>
+    <button class="btn" id="packDl" style="font-size:12px;padding:6px 10px;white-space:nowrap">Download</button>
+  </div>`;
+}
+function wireOfflineCard() {
+  const d = $("#packDl"), x = $("#packDel");
+  if (d) d.addEventListener("click", async () => {
+    d.disabled = true;
+    const card = d.closest(".card");
+    card.innerHTML = `<span style="font-size:13px" id="packStat">Downloading dictionary… 0%</span>`;
+    try {
+      const n = await downloadPack(p => { const s = $("#packStat"); if (s) s.textContent = `Downloading dictionary… ${p}%`; });
+      card.innerHTML = `<span style="font-size:13px">✓ <b style="color:var(--gold)">${n.toLocaleString()}</b> words saved — you are fully offline now</span><button class="btn ghost" id="packDel" style="font-size:12px;padding:6px 10px">Remove</button>`;
+      const xx = $("#packDel");
+      if (xx) xx.addEventListener("click", async () => { await removePack(); renderSearch(); });
+    } catch (e) {
+      card.innerHTML = `<span style="font-size:13px;color:var(--red)">Download failed: ${esc(e.message)}</span>`;
+    }
+  });
+  if (x) x.addEventListener("click", async () => { await removePack(); renderSearch(); });
+}
+
 async function api(path) {
+  if (PACK) {
+    const local = localServe(path);
+    if (local && (!local.offlineOnly || !navigator.onLine)) return local.data;
+  }
   const r = await fetch(API_BASE + path, { headers: { "x-api-key": getKey() } });
   const data = await r.json().catch(() => ({}));
   if (!r.ok) throw new Error(data.error || "Request failed");
@@ -316,8 +485,10 @@ async function renderSearch() {
   const el = $("#content");
   el.innerHTML = `
     <div class="searchbar"><input id="q" aria-label="Search words" placeholder="English, Arabic or romanized — e.g. patience, صبر, sabr" /><button class="btn" id="go">Search</button></div>
+    <div id="offlineCard">${offlineCardHTML()}</div>
     <div class="card wcard" id="wotd"><div class="wotd-label">📖 WORD OF THE DAY</div><div class="loading">…</div></div>
     <div id="results"></div>`;
+  wireOfflineCard();
   const q = $("#q");
   const run = async () => {
     const v = q.value.trim();
@@ -656,7 +827,13 @@ document.querySelectorAll(".tabs button").forEach(b => b.addEventListener("click
   else if (tab === "browse") renderBrowse();
   else renderWords();
 }));
-renderSearch();
+(async () => {
+  try {
+    const saved = await packGet();
+    if (saved && saved.words && saved.words.length) PACK = buildIndexes(saved);
+  } catch (e) {}
+  renderSearch();
+})();
 
 // ---- PWA install prompt ----
 let deferredPrompt = null;
