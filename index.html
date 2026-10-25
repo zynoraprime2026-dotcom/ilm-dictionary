@@ -549,15 +549,21 @@ const packPut = v => idbAction("ildict-pack", "readwrite", "put", v).then(() => 
 const packDel = () => idbAction("ildict-pack", "readwrite", "delete").catch(() => {});
 
 async function downloadPack(onProgress) {
-  const r = await fetch(API_BASE + "/v1/dictionary/offline", { headers: { "x-api-key": getKey() } });
+  const ac = new AbortController();
+  let stallT = null, stallRej = null;
+  const watchdog = new Promise((_, rej) => { stallRej = rej; stallT = setTimeout(() => rej(new Error("the connection stalled, tap Download again")), 20000); });
+  const kick = () => { clearTimeout(stallT); stallT = setTimeout(() => stallRej(new Error("the connection stalled, tap Download again")), 20000); };
+  try {
+  const r = await fetch(API_BASE + "/v1/dictionary/offline", { headers: { "x-api-key": getKey() }, signal: ac.signal });
   if (!r.ok) throw new Error("Download failed");
   const total = +(r.headers.get("content-length") || 4800000);
   let got = 0;
   const chunks = [];
   const reader = r.body.getReader();
   for (;;) {
-    const { done, value } = await reader.read();
+    const { done, value } = await Promise.race([reader.read(), watchdog]);
     if (done) break;
+    kick();
     chunks.push(value);
     got += value.length;
     onProgress(Math.min(99, Math.round(got / total * 100)));
@@ -567,6 +573,10 @@ async function downloadPack(onProgress) {
   await packPut({ words: data.words, roots: data.roots });
   PACK = buildIndexes({ words: data.words, roots: data.roots });
   return data.words.length;
+  } finally {
+    clearTimeout(stallT);
+    try { ac.abort(); } catch (e) {}
+  }
 }
 const removePack = async () => { await packDel(); PACK = null; };
 
@@ -594,7 +604,9 @@ function wireOfflineCard() {
       const xx = $("#packDel");
       if (xx) xx.addEventListener("click", async () => { await removePack(); renderSearch(); });
     } catch (e) {
-      card.innerHTML = `<span class="qtx" style="color:var(--red)">Download failed: ${esc(e.message)}</span>`;
+      card.innerHTML = `<span class="qtx" style="color:var(--red)">Download failed: ${esc(e.message)}</span> <button class="btn small" id="packRetry" style="margin-left:8px">Try again</button>`;
+      const rt = $("#packRetry");
+      if (rt) rt.addEventListener("click", () => { renderSearch(); const nd = $("#packDl"); if (nd) nd.click(); });
     }
   });
   if (x) x.addEventListener("click", async () => { await removePack(); renderSearch(); });
@@ -1168,16 +1180,21 @@ function quranComplete(p) {
 
 async function downloadQuran(onProgress) {
   quranBusy = true;
+  const ac = new AbortController();
+  let stallT = null, stallRej = null;
+  const watchdog = new Promise((_, rej) => { stallRej = rej; stallT = setTimeout(() => rej(new Error("the connection stalled, try again later")), 20000); });
+  const kick = () => { clearTimeout(stallT); stallT = setTimeout(() => stallRej(new Error("the connection stalled, try again later")), 20000); };
   try {
-    const r = await fetch(API_BASE + "/v1/quran/offline?translation=en.sahih", { headers: { "x-api-key": getKey() } });
+    const r = await fetch(API_BASE + "/v1/quran/offline?translation=en.sahih", { headers: { "x-api-key": getKey() }, signal: ac.signal });
     if (!r.ok) throw new Error("HTTP " + r.status);
     const total = +(r.headers.get("content-length") || 2300000);
     let got = 0;
     const chunks = [];
     const reader = r.body.getReader();
     for (;;) {
-      const { done, value } = await reader.read();
+      const { done, value } = await Promise.race([reader.read(), watchdog]);
       if (done) break;
+      kick();
       chunks.push(value);
       got += value.length;
       onProgress(Math.min(99, Math.round(got / total * 100)));
@@ -1189,6 +1206,8 @@ async function downloadQuran(onProgress) {
     localStorage.removeItem(QREMOVED_KEY);
     return data.surahs;
   } finally {
+    clearTimeout(stallT);
+    try { ac.abort(); } catch (e) {}
     quranBusy = false;
     quranProgress = -1;
   }
