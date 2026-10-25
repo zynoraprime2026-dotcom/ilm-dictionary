@@ -213,16 +213,17 @@ function idbOpen() {
     rq.onerror = () => rej(rq.error);
   });
 }
-async function idbAction(mode, method) {
+async function idbAction(mode, method, value) {
   const db = await idbOpen();
   return new Promise((res, rej) => {
-    const t = db.transaction("pack", mode).objectStore("pack")[method]("v1");
+    const store = db.transaction("pack", mode).objectStore("pack");
+    const t = method === "put" ? store.put(value, "v1") : store[method]("v1");
     t.onsuccess = () => res(t.result);
     t.onerror = () => rej(t.error);
   });
 }
 const packGet = () => idbAction("readonly", "get").catch(() => null);
-const packPut = v => idbAction("readwrite", "put").then(() => v);
+const packPut = v => idbAction("readwrite", "put", v).then(() => v);
 const packDel = () => idbAction("readwrite", "delete").catch(() => {});
 
 async function downloadPack(onProgress) {
