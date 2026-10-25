@@ -1227,7 +1227,7 @@ const BASMALAH = "\u0628\u0650\u0633\u0652\u0645\u0650 \u0671\u0644\u0644\u0651\
 // some editions embed the basmalah in ayah 1; show it as an ornamental header instead
 function splitBasmalah(surah, ayahs) {
   if (surah === 1 || surah === 9 || !ayahs.length) return { header: null, ayahs };
-  const norm = w => String(w || "").replace(AR_STRIP, "").replace(/\u0670|\u0640|\s/g, "");
+  const norm = w => String(w || "").replace(/\uFEFF/g, "").replace(AR_STRIP, "").replace(/\u0670|\u0640|\s/g, "");
   const first = String(ayahs[0][1] || "");
   const bare = norm(first);
   if (bare.startsWith(norm(BASMALAH))) {
@@ -1416,7 +1416,7 @@ async function showSurah(n, focusAyah) {
           <span class="anum">QURAN ${surah.number}:${an}</span>
           <button class="abm ${isMarked(an) ? "on" : ""}" data-bm="${an}" title="Bookmark ayah">${isMarked(an) ? "★" : "☆"}</button>
         </div>
-        <div class="aar">${esc(ar)}<span class="aymk">﴿${arNum(an)}﴾</div>
+        <div class="aar">${esc(String(ar).replace(/\uFEFF/g, ""))}<span class="aymk">﴿${arNum(an)}﴾</div>
         ${tr ? `<div class="atr">${esc(tr)}</div>` : ""}
       </div>`).join("")}
     </div>
@@ -1432,7 +1432,7 @@ async function showSurah(n, focusAyah) {
     ev.stopPropagation();
     const an = +b.dataset.bm;
     const row = b.closest(".ayah");
-    const ar = row.querySelector(".aar").textContent;
+    const ar = row.querySelector(".aar").textContent.replace(/\uFEFF/g, "");
     const tr = (row.querySelector(".atr") || {}).textContent || "";
     const now = toggleAyahMark(n, an, ar, tr);
     b.textContent = now ? "★" : "☆";
