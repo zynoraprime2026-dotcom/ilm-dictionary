@@ -413,8 +413,11 @@ a { color: var(--gold); }
 <div id="toast" role="status" aria-live="polite"></div>
 
 <script>
-const DEFAULT_KEY = "ilm_41cf502bdd0b2b07650bdb302edece3c";
-const getKey = () => localStorage.getItem("ilm_key") || DEFAULT_KEY;
+// No API key is embedded here anymore. The app talks to the API's keyless
+// /web/v1 gate, which authenticates server-side on the app's behalf.
+// (A developer key in localStorage is still sent if present.)
+const getKey = () => localStorage.getItem("ilm_key") || "";
+const authHeaders = () => { const k = getKey(); return k ? { "x-api-key": k } : {}; };
 const $ = s => document.querySelector(s);
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#039;" }[c]));
 
@@ -554,7 +557,7 @@ async function downloadPack(onProgress) {
   const watchdog = new Promise((_, rej) => { stallRej = rej; stallT = setTimeout(() => rej(new Error("the connection stalled, tap Download again")), 20000); });
   const kick = () => { clearTimeout(stallT); stallT = setTimeout(() => stallRej(new Error("the connection stalled, tap Download again")), 20000); };
   try {
-  const r = await fetch(API_BASE + "/v1/dictionary/offline", { headers: { "x-api-key": getKey() }, signal: ac.signal });
+  const r = await fetch(API_BASE + "/v1/dictionary/offline", { headers: authHeaders(), signal: ac.signal });
   if (!r.ok) throw new Error("Download failed");
   const total = +(r.headers.get("content-length") || 4800000);
   let got = 0;
@@ -617,7 +620,7 @@ async function api(path) {
     const local = localServe(path);
     if (local && (!local.offlineOnly || !navigator.onLine)) return local.data;
   }
-  const r = await fetch(API_BASE + path, { headers: { "x-api-key": getKey() } });
+  const r = await fetch(API_BASE + path, { headers: authHeaders() });
   const data = await r.json().catch(() => ({}));
   if (!r.ok) throw new Error(data.error || "Request failed");
   return data;
@@ -684,7 +687,7 @@ async function translitLookup(q) {
 }
 
 // ---------- audio pronunciation ----------
-const API_BASE = "https://ilm-api.vercel.app";
+const API_BASE = "https://ilm-api.vercel.app/web";
 const AUDIO_CACHE = new Map(); // word -> object URL of the fetched MP3
 let currentAudio = null;
 let arVoice = null;
@@ -700,7 +703,7 @@ async function playWord(word, btn) {
   if (!url) {
     if (btn) btn.classList.add("loading");
     try {
-      const r = await fetch(API_BASE + "/v1/dictionary/audio?word=" + encodeURIComponent(w), { headers: { "x-api-key": getKey() } });
+      const r = await fetch(API_BASE + "/v1/dictionary/audio?word=" + encodeURIComponent(w), { headers: authHeaders() });
       if (!r.ok) throw new Error("HTTP " + r.status);
       url = URL.createObjectURL(await r.blob());
       AUDIO_CACHE.set(w, url);
@@ -1185,7 +1188,7 @@ async function downloadQuran(onProgress) {
   const watchdog = new Promise((_, rej) => { stallRej = rej; stallT = setTimeout(() => rej(new Error("the connection stalled, try again later")), 20000); });
   const kick = () => { clearTimeout(stallT); stallT = setTimeout(() => stallRej(new Error("the connection stalled, try again later")), 20000); };
   try {
-    const r = await fetch(API_BASE + "/v1/quran/offline?translation=en.sahih", { headers: { "x-api-key": getKey() }, signal: ac.signal });
+    const r = await fetch(API_BASE + "/v1/quran/offline?translation=en.sahih", { headers: authHeaders(), signal: ac.signal });
     if (!r.ok) throw new Error("HTTP " + r.status);
     const total = +(r.headers.get("content-length") || 2300000);
     let got = 0;
