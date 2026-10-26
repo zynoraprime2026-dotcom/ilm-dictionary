@@ -964,8 +964,8 @@ async function showWord(w) {
     const d = await api(`/v1/dictionary/word/${encodeURIComponent(w)}`);
     el.innerHTML = `<button class="back" id="back2">← Back</button>
       <p class="seclabel" style="margin-top:14px">ALL SENSES OF ${esc(w)}</p>
-      <p class="note" style="text-align:left">its root appears ${esc(d.quran_occurrences_of_root)}× in the Quran</p>` +
-      (d.entries || []).map(e => wordCard(e, { srs: true })).join("");
+      <p class="note" style="text-align:left">its root appears ${esc(d.quran_occurrences_of_root)}× in the Quran${(d.entries || []).some(e => e.root) ? ` · <button class="qlink" data-qq="${esc((d.entries.find(e => e.root) || {}).root)}" style="margin:0">See in the Quran</button>` : ""}</p>` +
+      (d.entries || []).map(e => wordCard(e, { srs: true, quran: false })).join("");
     $("#back2").addEventListener("click", () => { tab === "search" ? renderSearch() : tab === "browse" ? renderBrowse() : renderWords(); });
     wireCards(el);
   } catch (e) {
@@ -1032,7 +1032,7 @@ async function showRoot(root) {
         <div style="text-align:center"><button class="qlink" data-qq="${esc(d.root)}" title="Read every ayah of this root in the built-in Quran">See this root in the Quran</button></div>
       </div>
       <p class="seclabel">EVERY WORD DERIVED FROM THIS ROOT</p>` +
-      (d.entries || []).map(e => wordCard(e, { tapword: false })).join("");
+      (d.entries || []).map(e => wordCard(e, { tapword: false, quran: false })).join("");
     $("#back2").addEventListener("click", () => { tab === "search" ? renderSearch() : tab === "browse" ? renderBrowse() : renderRoots(); });
     wireCards(el);
   } catch (e) {
@@ -1498,7 +1498,10 @@ async function renderQuranRoot(root) {
   try {
     occ = await api("/v1/roots/" + encodeURIComponent(bare) + "/occurrences");
   } catch (e) {
-    el.innerHTML = `<button class="back" id="qqBack">← Back</button><div class="empty">Could not load Quran occurrences${esc(e.message ? " — " + e.message : "")}.${navigator.onLine ? "" : "<br>You are offline; reconnect once to cache this root."}</div>`;
+    const notThere = /not found|no tagged/i.test(e.message || "");
+    el.innerHTML = `<button class="back" id="qqBack">← Back</button><div class="empty">${notThere
+      ? `This root does not appear in the Quran — its words are used in Arabic, but not in the Book.`
+      : `Could not load Quran occurrences${esc(e.message ? " — " + e.message : "")}.${navigator.onLine ? "" : "<br>You are offline; reconnect once to cache this root."}`}</div>`;
     $("#qqBack").addEventListener("click", goBack);
     return;
   }
