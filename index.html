@@ -1331,7 +1331,7 @@ function renderWords() {
     const h = $("#audiohead"); if (!h) return;
     const kset = new Set(await audioKeys());
     const have = ws.filter(w => kset.has(plainAr(w.word))).length;
-    h.innerHTML = `<span>🔊 <b>${have} of ${ws.length}</b> word${ws.length === 1 ? "" : "s"} have offline pronunciation${have < ws.length ? "" : " — all set"}</span>${have < ws.length ? `<button class="btn ghost small" id="saveAudio" style="white-space:nowrap">Save ${ws.length - have}</button>` : ""}`;
+    h.innerHTML = `<span>🔊 <b>${have} of ${ws.length}</b> word${ws.length === 1 ? " has" : "s have"} offline pronunciation${have < ws.length ? "" : " — all set"}</span>${have < ws.length ? `<button class="btn ghost small" id="saveAudio" style="white-space:nowrap">Save ${ws.length - have}</button>` : ""}`;
     const sa = $("#saveAudio");
     if (sa) sa.addEventListener("click", async () => {
       if (!navigator.onLine) { toast("Connect to the internet once to download"); return; }
