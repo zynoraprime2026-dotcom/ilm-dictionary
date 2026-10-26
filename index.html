@@ -187,6 +187,7 @@ a { color: var(--gold); }
   transition: border-color .2s, background .2s;
 }
 .qlink:hover { border-color: var(--gold); background: var(--gold-soft); }
+button.qlink { background: transparent; color: inherit; font-family: inherit; cursor: pointer; }
 
 /* ============ roots & browse ============ */
 .rootsgrid { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
@@ -801,7 +802,7 @@ function wordCard(e, opts = {}) {
     <div class="ar">${esc(e.word)}<span class="pos">${esc(e.pos || "")}</span></div>
     <div class="gloss">${esc(e.gloss_en || "")}</div>
     ${e.root ? `<span class="rootchip" data-root="${esc(e.root)}">جذر ${esc(e.root)}</span>` : ""}
-    ${opts.quran !== false ? `<a class="qlink" href="https://quran.com/search?q=${encodeURIComponent(String(e.word).replace(AR_STRIP, ""))}" target="_blank" rel="noopener">See in the Quran ↗</a>` : ""}
+    ${opts.quran !== false && e.root ? `<button class="qlink" data-qq="${esc(e.root)}" title="See this root in the Quran">See in the Quran</button>` : ""}
     ${opts.srs ? srsChips(e.word) : ""}
     ${opts.tapword ? `<div class="note">Tap the word for all senses</div>` : ""}
   </div>`;
@@ -820,6 +821,10 @@ function wireCards(scope) {
   scope.querySelectorAll(".rootchip, .rchip").forEach(b => b.addEventListener("click", ev => {
     ev.stopPropagation();
     showRoot(b.dataset.root);
+  }));
+  scope.querySelectorAll("[data-qq]").forEach(b => b.addEventListener("click", ev => {
+    ev.stopPropagation();
+    renderQuranRoot(b.dataset.qq);
   }));
   scope.querySelectorAll("[data-w]").forEach(c => c.addEventListener("click", () => showWord(c.dataset.w)));
 }
@@ -1024,7 +1029,7 @@ async function showRoot(root) {
         <div class="ar" style="font-size:32px">${esc(d.root)}</div>
         ${q.meaning ? `<div class="gloss" style="text-align:center">${esc(q.meaning)}</div>` : ""}
         <div class="note" style="text-align:center">${esc(d.entry_count)} word(s) built on this root${q.occurrence_count ? " · appears " + esc(q.occurrence_count) + "× in the Quran" : ""}</div>
-        <div style="text-align:center"><a class="qlink" href="https://quran.com/search?q=${encodeURIComponent(String(d.root).replace(/-/g, ""))}" target="_blank" rel="noopener">See this root in the Quran ↗</a></div>
+        <div style="text-align:center"><button class="qlink" data-qq="${esc(d.root)}" title="Read every ayah of this root in the built-in Quran">See this root in the Quran</button></div>
       </div>
       <p class="seclabel">EVERY WORD DERIVED FROM THIS ROOT</p>` +
       (d.entries || []).map(e => wordCard(e, { tapword: false })).join("");
@@ -1475,6 +1480,67 @@ async function showSurah(n, focusAyah) {
     const t = document.getElementById("ay-" + focusAyah);
     if (t) { t.classList.add("flash"); setTimeout(() => t.scrollIntoView({ behavior: "smooth", block: "center" }), 80); }
   } else window.scrollTo({ top: 0 });
+}
+
+// ---- root occurrences, shown inside the app's own Quran ----
+async function renderQuranRoot(root) {
+  const el = $("#content");
+  const bare = packNormRoot(root);
+  // the active tab pill moves to Quran while reading
+  document.querySelectorAll(".tabs button").forEach(x => x.classList.remove("active"));
+  const qbtn = document.querySelector('.tabs button[data-tab="quran"]');
+  if (qbtn) qbtn.classList.add("active");
+  const goBack = () => { document.querySelectorAll(".tabs button").forEach(x => x.classList.remove("active"));
+    const b = document.querySelector(`.tabs button[data-tab="${tab}"]`); if (b) b.classList.add("active"); showRoot(root); };
+  el.innerHTML = `<button class="back" id="qqBack">← Back</button><div class="loading">Finding ${esc(root)} in the Quran…</div>`;
+  $("#qqBack").addEventListener("click", goBack);
+  let occ;
+  try {
+    occ = await api("/v1/roots/" + encodeURIComponent(bare) + "/occurrences");
+  } catch (e) {
+    el.innerHTML = `<button class="back" id="qqBack">← Back</button><div class="empty">Could not load Quran occurrences${esc(e.message ? " — " + e.message : "")}.${navigator.onLine ? "" : "<br>You are offline; reconnect once to cache this root."}</div>`;
+    $("#qqBack").addEventListener("click", goBack);
+    return;
+  }
+  let suras = [];
+  try { suras = await getSurahList(); } catch (e) {}
+  const sName = n => { const s = suras.find(x => x.number === n); return s ? s.name_english : "sura " + n; };
+  const list = occ.occurrences || [];
+  const bySura = new Map();
+  list.forEach(o => {
+    if (!bySura.has(o.surah_number)) bySura.set(o.surah_number, []);
+    bySura.get(o.surah_number).push(o);
+  });
+  const suraIds = [...bySura.keys()].sort((a, b) => a - b);
+  let shown = 60;
+  const draw = () => {
+    let count = 0;
+    const rows = [];
+    for (const sn of suraIds) {
+      const sl = bySura.get(sn);
+      const take = sl.slice(0, Math.max(0, shown - count));
+      if (take.length === 0) break;
+      count += take.length;
+      rows.push(`<p class="seclabel" style="margin-top:14px">${arNum(sn)} · ${esc(sName(sn))} · ${sl.length}×${take.length < sl.length ? " — showing " + take.length : ""}</p>
+        <div class="rootsgrid">${take.map(o => `
+          <button class="rchip" data-qs="${o.surah_number}" data-qa="${o.ayah_number}" title="Quran ${o.surah_number}:${o.ayah_number}">
+            <span class="ra">${esc(o.word || "")} <span style="opacity:.6;font-size:12px">(${arNum(o.surah_number)}:${arNum(o.ayah_number)})</span></span>
+          </button>`).join("")}</div>`);
+      if (count >= shown) break;
+    }
+    el.innerHTML = `<button class="back" id="qqBack">← Back</button>
+      <div class="card" style="text-align:center">
+        <div class="ar" style="font-size:32px">${esc(occ.root || root)}</div>
+        ${occ.meaning ? `<div class="gloss" style="text-align:center">${esc(occ.meaning)}</div>` : ""}
+        <div class="note" style="text-align:center">${list.length} place(s) in the Quran — tap any word form to read its ayah</div>
+      </div>
+      ${rows.join("")}
+      ${count < list.length ? `<div style="text-align:center;margin:14px"><button class="btn ghost" id="qqMore">Show more (${list.length - count} left)</button></div>` : ""}`;
+    $("#qqBack").addEventListener("click", goBack);
+    el.querySelectorAll("[data-qs]").forEach(r => r.addEventListener("click", () => showSurah(+r.dataset.qs, +r.dataset.qa)));
+    const m = $("#qqMore"); if (m) m.addEventListener("click", () => { shown += 200; draw(); });
+  };
+  draw();
 }
 
 // ---- tabs ----
