@@ -778,7 +778,7 @@ function libraryCardHTML() {
       ? libRow("libQuran", IC_QURAN, true, "Quran offline", "114 suras · 6,236 ayahs saved", `<button class="btn ghost small" data-lib="quranDel">Remove</button>`)
       : libRow("libQuran", IC_QURAN, false, "Quran", "114 suras · ~2 MB · read without a connection", `<button class="btn small" data-lib="quranDl" style="white-space:nowrap">Download</button>`),
     aOk
-      ? libRow("libAudio", IC_AUDIO, true, "Pronunciation audio offline", `${AUDIO_COUNT.toLocaleString()} clips saved — plays without a connection`, `<button class="btn ghost small" data-lib="audioDel">Remove</button>`)
+      ? libRow("libAudio", IC_AUDIO, true, "Pronunciation audio offline", `${AUDIO_COUNT.toLocaleString()} clips saved — plays without a connection`, `<button class="btn ghost small" data-lib="audioUp" title="Fetch any missing clips">Update</button> <button class="btn ghost small" data-lib="audioDel">Remove</button>`)
       : libRow("libAudio", IC_AUDIO, false, "Pronunciation audio", "600 core Quranic words · ~4 MB — every word you listen to is saved too", `<button class="btn small" data-lib="audioDl" style="white-space:nowrap">Download</button>`)
   ];
   return `<div class="lib">
@@ -830,6 +830,15 @@ function wireLibraryCard() {
       try {
         const res = await downloadAudioFor(CORE_AUDIO, p => libRowProgress("libAudio", p, "Saving audio…"));
         toast(res && res.total ? `Audio saved — ${res.done} clip${res.done === 1 ? "" : "s"}${res.failed ? " (" + res.failed + " failed, retry anytime)" : ""}` : "Audio already saved");
+      } catch (e) { toast("Audio download failed: " + e.message); }
+      el.innerHTML = libraryCardHTML(); wireLibraryCard();
+    } else if (what === "audioUp") {
+      if (!navigator.onLine) { toast("Connect to the internet once to download"); return; }
+      if (audioBusy) return;
+      b.disabled = true;
+      try {
+        const res = await downloadAudioFor(CORE_AUDIO, p => libRowProgress("libAudio", p, "Updating audio…"));
+        toast(res && res.total ? `Audio updated — ${res.done} clip${res.done === 1 ? "" : "s"}${res.failed ? " (" + res.failed + " failed, retry anytime)" : ""}` : "Audio pack is up to date");
       } catch (e) { toast("Audio download failed: " + e.message); }
       el.innerHTML = libraryCardHTML(); wireLibraryCard();
     } else if (what === "audioDel") {
