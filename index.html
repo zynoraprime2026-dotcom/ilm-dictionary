@@ -527,6 +527,11 @@ function localServe(path) {
     // same shape as the live API: a bare array of roots
     return { data: (PACK.roots || []).map(r => ({ root: r.root_arabic, root_arabic: r.root_arabic, meaning: r.meaning, occurrence_count: r.occurrence_count })) };
   }
+  // Word of the Day picks from this list; serving it from the pack keeps the
+  // home screen fully usable offline on a fresh day.
+  if (path === "/v1/dictionary/roots" || path.startsWith("/v1/dictionary/roots?")) {
+    return { data: { count: (PACK.roots || []).length, roots: (PACK.roots || []).map(r => ({ root: r.root_arabic, root_arabic: r.root_arabic, meaning: r.meaning, occurrence_count: r.occurrence_count })) } };
+  }
   return null;
 }
 
@@ -1230,17 +1235,17 @@ async function downloadQuran(onProgress) {
 async function quranDailyCheck() {
   const today = new Date().toDateString();
   if (localStorage.getItem(QCHECK_KEY) === today) return; // already verified today
-  localStorage.setItem(QCHECK_KEY, today);
-  if (!navigator.onLine) return; // will check on the next online open
+  if (!navigator.onLine) return; // offline: don't burn today's check, retry when online
   let p = QPACK;
   if (!p) p = await quranGet();
-  if (quranComplete(p)) { QPACK = p; return; }
-  if (localStorage.getItem(QREMOVED_KEY) === "1") return; // user removed it on purpose
+  if (quranComplete(p)) { QPACK = p; localStorage.setItem(QCHECK_KEY, today); return; }
+  if (localStorage.getItem(QREMOVED_KEY) === "1") { localStorage.setItem(QCHECK_KEY, today); return; } // removed on purpose
   try {
     toast("Checking your offline Quran…");
     await downloadQuran(p2 => { quranProgress = p2; });
+    localStorage.setItem(QCHECK_KEY, today);
     toast("All 114 suras are saved for offline reading");
-  } catch (e) { /* next daily check will retry */ }
+  } catch (e) { /* not marked: retries on the next open */ }
 }
 
 const ayahMarks = () => JSON.parse(localStorage.getItem(AYAH_MARKS_KEY) || "[]");

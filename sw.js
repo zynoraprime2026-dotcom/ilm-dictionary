@@ -1,10 +1,12 @@
 // Ilm Dictionary service worker — app shell + API responses cached for offline study
-const CACHE = "ilm-dict-v17";
+const CACHE = "ilm-dict-v18";
 const SHELL = ["./", "./index.html", "./manifest.webmanifest", "./icon-192.png", "./icon-512.png"];
 const API = "https://ilm-api.vercel.app";
 
 self.addEventListener("install", e => {
-  e.waitUntil(caches.open(CACHE).then(c => c.addAll(SHELL)).then(() => self.skipWaiting()));
+  // shell items are cached individually: one flaky asset (e.g. an icon on a
+  // bad connection) must not block the whole update; shellFetch self-heals it
+  e.waitUntil(caches.open(CACHE).then(c => Promise.allSettled(SHELL.map(u => c.add(u)))).then(() => self.skipWaiting()));
 });
 self.addEventListener("activate", e => {
   e.waitUntil(caches.keys().then(ks => Promise.all(ks.filter(k => k !== CACHE).map(k => caches.delete(k)))).then(() => self.clients.claim()));
