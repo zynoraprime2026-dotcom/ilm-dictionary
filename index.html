@@ -362,6 +362,87 @@ button.qlink { background: transparent; color: inherit; font-family: inherit; cu
 @media (prefers-reduced-motion: reduce) {
   #content > *, .card, .btn { animation: none !important; transition: none !important; }
 }
+
+/* ============ v19: modern pass ============ */
+/* greeting & daily hub */
+.homehead { padding: 18px 2px 2px; display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
+.homehead .hgreet { font-size: 23px; font-weight: 800; letter-spacing: -.3px; line-height: 1.2; }
+.homehead .hdate { font-size: 10.5px; color: var(--muted); letter-spacing: 1.8px; text-transform: uppercase; margin-top: 5px; }
+.homehead .hchips { display: flex; flex-direction: column; gap: 6px; align-items: flex-end; flex: none; }
+.hchip {
+  display: inline-flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 700; cursor: pointer;
+  color: var(--gold); background: var(--gold-soft); padding: 5px 11px; border-radius: 999px; white-space: nowrap;
+  border: none; font-family: inherit; transition: transform .15s, filter .2s;
+}
+.hchip:active { transform: scale(.94); }
+.hchip.dim { color: var(--muted); background: var(--card2); border: 1px solid var(--border); }
+.hchip.due { color: var(--red); background: color-mix(in srgb, var(--red) 13%, transparent); }
+
+/* offline library panel */
+.lib {
+  margin-top: 14px; border: 1px solid var(--border); border-radius: 20px; overflow: hidden;
+  background: linear-gradient(180deg, var(--card2), var(--card));
+  box-shadow: 0 1px 0 rgba(255,255,255,.03) inset;
+}
+.lib .libhead { display: flex; align-items: center; justify-content: space-between; padding: 13px 16px 9px; }
+.lib .libhead .lt { font-size: 10.5px; letter-spacing: 2.5px; color: var(--gold); font-weight: 700; }
+.lib .libhead .ls { font-size: 10.5px; color: var(--faint); letter-spacing: .4px; }
+.librow { display: flex; align-items: center; gap: 12px; padding: 12px 16px; border-top: 1px solid var(--border); min-height: 64px; }
+.librow .lic {
+  width: 38px; height: 38px; border-radius: 12px; flex: none;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--gold-soft); color: var(--gold);
+}
+.librow .lic svg { width: 19px; height: 19px; }
+.librow .lic.ok { background: color-mix(in srgb, var(--green) 14%, transparent); color: var(--green); }
+.librow .ltx { flex: 1; min-width: 0; font-size: 12.5px; color: var(--muted); line-height: 1.45; }
+.librow .ltx b { color: var(--text); font-size: 13px; }
+.librow .ltx .ok { color: var(--green); font-weight: 700; }
+.librow .lact { flex: none; }
+
+/* refined search */
+.searchbar input { padding-top: 14px; padding-bottom: 14px; font-size: 16px; border-radius: 16px; }
+.searchbar .sfield svg { left: 14px; }
+
+/* word-of-the-day hero */
+.wcard { border-radius: 22px; border-color: var(--border2); background: linear-gradient(165deg, var(--card2), var(--card)); padding: 19px 18px; }
+.wcard::before { width: 220px; height: 220px; inset: -70% 25% auto auto; }
+.wotd-top { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.wcard .speak { float: none; width: 38px; height: 38px; border-radius: 12px; background: var(--gold-soft); }
+.wcard .speak svg { margin: auto; }
+.wcard .speak.playing { background: color-mix(in srgb, var(--gold) 25%, transparent); }
+.wotd-word { font-size: 38px; margin-top: 10px; line-height: 1.5; }
+.wotd-actions { display: flex; align-items: center; gap: 10px; margin-top: 12px; flex-wrap: wrap; }
+.wotd-actions .star { float: none; font-size: 22px; }
+
+/* skeleton shimmer */
+.skel {
+  border-radius: 10px; height: 12px;
+  background: linear-gradient(90deg, var(--card2) 30%, var(--raise) 50%, var(--card2) 70%);
+  background-size: 200% 100%; animation: ilmskel 1.5s infinite linear;
+}
+@keyframes ilmskel { from { background-position: 200% 0; } to { background-position: -200% 0; } }
+
+/* playing pulse */
+.speak.playing svg { animation: ilmwave .9s ease-in-out infinite; }
+@keyframes ilmwave { 0%,100% { opacity: 1 } 50% { opacity: .45 } }
+
+/* nav pill glow + focus rings */
+.tabs button.active { box-shadow: 0 4px 14px color-mix(in srgb, var(--gold) 16%, transparent); }
+.btn:focus-visible, .iconbtn:focus-visible, .tabs button:focus-visible, .librow button:focus-visible, input:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+.card { box-shadow: 0 1px 0 rgba(255,255,255,.02) inset; }
+.card:hover { box-shadow: 0 8px 22px rgba(0,0,0,.14); }
+html[data-theme="light"] .card:hover { box-shadow: 0 8px 22px rgba(60,55,30,.10); }
+
+/* audio row in My Words */
+.audiohead {
+  display: flex; align-items: center; gap: 10px; margin-top: 12px; padding: 10px 14px;
+  border: 1px solid var(--border); border-radius: 14px; background: var(--card2);
+  font-size: 12px; color: var(--muted); line-height: 1.4;
+}
+.audiohead b { color: var(--text); }
+.audiohead span { flex: 1; }
+@media (prefers-reduced-motion: reduce) { .skel, .speak.playing svg { animation: none !important; } }
 </style>
 </head>
 <body>
@@ -379,7 +460,7 @@ button.qlink { background: transparent; color: inherit; font-family: inherit; cu
 
 <div class="wrap">
   <div id="content"></div>
-  <footer>Ilm Dictionary · built on the Ilm API · full Quran + dictionary offline</footer>
+  <footer>Ilm Dictionary · built on the Ilm API · full Quran, dictionary and pronunciation audio offline</footer>
 </div>
 
 <nav class="tabs" aria-label="Main navigation">
@@ -589,36 +670,175 @@ async function downloadPack(onProgress) {
 }
 const removePack = async () => { await packDel(); PACK = null; };
 
-function offlineCardHTML() {
-  if (PACK) return `<div class="qstatus">
-    <div class="qic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></div>
-    <span class="qtx"><b style="color:var(--green)">${(PACK.total || 0).toLocaleString()} words saved</b><br>the whole dictionary works offline</span>
-    <button class="btn ghost small" id="packDel">Remove</button>
-  </div>`;
-  return `<div class="qstatus">
-    <div class="qic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m0 0 4-4m-4 4-4-4"/><path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg></div>
-    <span class="qtx"><b>Save the whole dictionary</b><br>36,500+ words, ~2 MB, fully offline</span>
-    <button class="btn small" id="packDl" style="white-space:nowrap">Download</button>
+// ---------- offline audio store — one MP3 clip per word, keyed by its skeleton ----------
+const AUDIO_DB = "ildict-audio";
+function audioOpen() {
+  return new Promise((res, rej) => {
+    const rq = indexedDB.open(AUDIO_DB, 1);
+    rq.onupgradeneeded = () => rq.result.createObjectStore("clips");
+    rq.onsuccess = () => res(rq.result);
+    rq.onerror = () => rej(rq.error);
+  });
+}
+async function audioOp(mode, run) {
+  const db = await audioOpen();
+  return new Promise((res, rej) => {
+    const tx = db.transaction("clips", mode);
+    const rq = run(tx.objectStore("clips"));
+    tx.oncomplete = () => res(rq && rq.result !== undefined ? rq.result : null);
+    tx.onerror = () => rej(tx.error);
+  });
+}
+const audioGet = k => audioOp("readonly", s => s.get(k));
+const audioPut = (k, blob) => audioOp("readwrite", s => s.put(blob, k)).catch(() => {});
+const audioCount = () => audioOp("readonly", s => s.count()).catch(() => 0);
+const audioKeys = () => audioOp("readonly", s => s.getAllKeys()).catch(() => []);
+const audioClear = () => audioOp("readwrite", s => s.clear()).catch(() => {});
+let AUDIO_COUNT = 0;
+
+// the 600 most frequent word forms in the Quran — the core listening pack
+const CORE_AUDIO = ["اللَّه", "قالَ", "الَّذِي", "عَلَى", "كانَ", "إِلَى", "إِلّا", "آمَنَ", "يَوْم", "أَرْض", "إِذا", "قَوْم", "عَلِمَ", "آيَة", "جَعَلَ", "رَسُول", "عَذاب", "سَماء", "نَفْس", "كَفَرَ", "شَىْء", "جاءَ", "عَمِلَ", "آتَى", "رَأَى", "بَيْن", "أَتَى", "كِتاب", "قَبْل", "ناس", "شاءَ", "مُؤْمِن", "بَعْد", "عِند", "خَلَقَ", "أَنزَلَ", "خَيْر", "كَذَّبَ", "سَبِيل", "دَعا", "اتَّقَى", "أَمْر", "لَمّا", "عَلِيم", "بَعْض", "كافِر", "آخِر", "غَيْر", "جَنَّة", "إِلٰه", "نار", "هَدَى", "دُون", "حَتَّى", "أَرادَ", "مُوسَى", "اتَّبَعَ", "قَلْب", "عَبْد", "أَرْسَلَ", "لَعَلّ", "ظالِم", "أَخَذَ", "أَهْل", "اتَّخَذَ", "عَبَدَ", "مُبِين", "رَحِيم", "دُنْيا", "رَحْمَة", "ظَلَمَ", "عَظِيم", "سَأَلَ", "وَجَدَ", "عِلْم", "أَجْر", "عَزِيز", "أَخْرَجَ", "حَكِيم", "أَكَلَ", "دِين", "قَوْل", "غَفُور", "لَيْسَ", "شَيْطان", "مَثَل", "فَعَلَ", "مَلَك", "نَظَرَ", "وَلِيّ", "مال", "هُدًى", "ذَكَرَ", "فَضْل", "لَيْل", "صَلاة", "كَيْف", "قَتَلَ", "خافَ", "أَوَّل", "بُنَىّ", "أَكْثَر", "رَجَعَ", "أَصْحاب", "تَوَلَّى", "سَمِعَ", "أَمَرَ", "جَهَنَّم", "زَوْج", "دَخَلَ", "حَياة", "ذِكْر", "مِثْل", "نَبِيّ", "لَوْلا", "خالِد", "فِرْعَوْن", "صالِح", "أَحَد", "عالَم", "جَزَى", "أَلِيم", "وَجْه", "أَطاعَ", "أَوْحَى", "إِنسان", "بَيِّنَة", "أَشْرَكَ", "عَمَل", "أَلْقَى", "قَلِيل", "قِيامَة", "آخَر", "قُرْءان", "وَعَدَ", "إِبْراهِيم", "أَنفَقَ", "لٰكِن", "غَفَرَ", "لٰكِنّ", "بَيْت", "يَمِين", "أَضَلَّ", "أُمَّة", "آباء", "أَصابَ", "أَحْبَبْ", "ماء", "كَثِير", "تابَ", "ابْن", "نَزَّلَ", "صالِحَة", "كَسَبَ", "رَزَقَ", "تَلَى", "صادِق", "نَصَرَ", "نِساء", "قَضَى", "صَبَرَ", "سَيِّئَة", "نَذِير", "رَحْمٰن", "جَرَيْ", "قَرْيَة", "عَيْن", "نَهار", "شَهِيد", "وَلَد", "شَدِيد", "رِزْق", "ضَرَبَ", "أَمّا", "أَقامَ", "نَهَر", "قاتَلَ", "جَمِيع", "خَرَجَ", "بَعَثَ", "خَلْق", "أَجَل", "مُجْرِم", "تَحْت", "أَحْيا", "بَصِير", "أَهْلَكَ", "تَذَكَّرَ", "مَوْت", "عَدُوّ", "نِعْمَة", "سُوء", "افْتَرَى", "مُتَّقي", "غَيْب", "زادَ", "عَقَلُ", "كَتَبَ", "أَعْلَم", "وَعْد", "بَصَر", "دار", "مُلْك", "ساعَة", "سَمِيع", "شَكَرَ", "نَبَّأَ", "صِراط", "قَدِير", "إِيمان", "حَكَمَ", "يَذَرَ", "خَبِير", "أَنذَرَ", "شَهِدَ", "مُشْرِك", "حَسِبَ", "صَدْر", "نادَى", "مَلَكَتْ", "حَمْد", "نُور", "إِسْرائِيل", "نُوح", "سَبَّحَ", "كَلِمَة", "جَزاء", "اسْتَطاعَ", "أُدْخِلَ", "سَوْف", "سَلام", "فَوْق", "عَلَّمَ", "سُبْحان", "بَحْر", "حَمَلَ", "عَذَّبَ", "تَرَكَ", "اسْتَكْبَرَ", "اهْتَدَى", "أَرَيْ", "وَيْل", "بِئْسَ", "خَشِيَ", "بَلَغَ", "اسْتَغْفَرَ", "كَبِير", "تَوَكَّلْ", "شَرِيك", "اسْم", "أَلا", "إِذْن", "مُسْلِم", "ماتَ", "حَرَّمَ", "حِساب", "جَبَل", "بُشِّرَ", "مَيِّت", "مُحْسِن", "رَضِيَ", "مَعْرُوف", "ضَلال", "مُسْتَقِيم", "فاسِق", "يَحْزُن", "نَجَّى", "عَصا", "كُفْر", "حَشَرَ", "ذَنب", "نَعَم", "بَشَر", "سُلْطان", "أَحْسَن", "ذاقُ", "ذَهَبَ", "اسْتَوَى", "سَجَدَ", "مَتاع", "حِين", "نَسِيَ", "بَيَّنُ", "إِثْم", "نَصِير", "اخْتَلَفَ", "مُرْسَل", "مَرْيَم", "فِتْنَة", "ابْتَغَى", "آلاء", "قامَ", "فَرِيق", "حَرام", "شَمْس", "كَذِب", "كَلّا", "خاسِر", "زَكاة", "ذُرِّيَّة", "كَفَى", "كاذِب", "نَهَى", "عاقِبَة", "أَعْرَضَ", "حَيْث", "أَشَدّ", "كَأَنّ", "نَفَعَ", "إِذًا", "حَسَنَة", "واحِدَة", "طَيِّبَة", "واحِد", "قُوَّة", "وَلَّى", "عاد", "عَسَى", "مَلَأ", "لَبِثَ", "حُكْم", "ساءَ", "كَرِيم", "أَبْصَرَ", "عَهْد", "رِيح", "جُند", "عَرْش", "رَجُل", "نَبَأ", "أَبَدًا", "سِحْر", "مَسْجِد", "مَصِير", "أَصْلَحَ", "مَغْفِرَة", "اسْتَجابَ", "مُؤْمِنَة", "أَنَّى", "رِجال", "رَحِمَ", "أَغْنَتْ", "أَصْبَحَ", "حَدِيث", "سَواء", "عَفا", "باب", "غافِل", "قَدَّمَ", "أَفْلَحَ", "جاهَدَ", "مَكان", "مُنافِق", "قَمَر", "يُوسُف", "لُوط", "ماذا", "خَوْف", "باطِل", "جَحِيم", "شَهادَة", "أَجْمَع", "قَرِيب", "زَيَّنَ", "امْرَأَت", "كَيْد", "ثَمُود", "يَشْعُرُ", "خَلا", "مِيثاق", "آدَم", "عِيسَى", "جُناح", "بَعِيد", "بَأْس", "قَدَرَ", "لِسان", "بَغَى", "جادَلُ", "إِيّا", "كادَ", "طَعام", "وَراء", "أُنثَى", "أَكْبَر", "تَوَفَّى", "غَنِيّ", "طائِفَة", "وَكِيل", "لِقاء", "ظُلُمَة", "سَبْع", "إِمّا", "أَنجَى", "ساجِد", "بَدَّلَ", "يَتِيم", "مِسْكِين", "لَعَنَ", "فُلْك", "أَذِنَ", "فَتَنُ", "قَرْن", "ذِكْرَى", "سَمْع", "رَفَعَ", "خَلْف", "بَلَى", "أَسْلَمَ", "دُعاء", "نَصْر", "يَرْجُوا۟", "وَهَبَ", "جَمَعَ", "لَدَى", "مَكَرَ", "مَأْوَى", "أَذاقَ", "ساحِر", "سَخَّرَ", "مُفْسِد", "اسْتُهْزِئَ", "اشْتَرَى", "أَعْمَى", "أَماتَ", "كَتَمَ", "رُوح", "شَهْر", "أَحْسَنَ", "نَصِيب", "حَسَن", "مُسَمًّى", "وَضَعَ", "شاهِد", "مُكَذِّب", "أَعَدَّ", "أَوْفَى", "عَرَفَ", "سَعَى", "كَلَّمَ", "حِكْمَة", "صابِر", "بَلَوْ", "أَحَلَّ", "أَمِنَ", "عِقاب", "مَرَّة", "هارُون", "ظُلْم", "أَقْسَمُ", "حِزْب", "أَنشَأَ", "حَمِيم", "سَبَقَ", "شَجَرَة", "مُصَدِّق", "مُعْرِض", "يَضُرَّ", "أَيْن", "أَقْرَب", "طَيْر", "نَفَخَ", "فَوْز", "يَفْقَهُ", "اسْتَعْجَلَ", "زِينَة", "مَكْر", "رَيْب", "أُذُن", "أَسَرَّ", "تَبَيَّنَ", "مَتَّعْ", "دابَّة", "رَأْس", "دَرَجَة", "أَمْسَكَ", "نِعْمَ", "أُخْفِيَ", "وَفَّى", "عادَ", "ذُكِّرَ", "مَوْلَى", "تَوْراة", "لَدُن", "ذَكَر", "مُنكَر", "دُبُر", "عالِم", "إِنس", "أُعِيدُ", "أَنْعَمَ", "مُهْتَدي", "حَوْل", "ثَمَرَة", "فَضَّلَ", "أُغْرِقُ", "أَحاطَ", "سُلَيْمان", "أَهْواء", "إِسْحاق", "انقَلَبَ", "بَطْن", "تَقْوَى", "كَرِهَ", "يَتَفَكَّرُ", "تُراب", "حَمِيد", "تَأْوِيل", "قائِم", "فاحِشَة", "بِنْت", "حُسْنَى", "نَعِيم", "فَصَّلَ", "أَدْرَى", "أَنۢبَتَ", "فَتَحَ", "قُرْبَى", "أَظْلَم", "أَتَمَّ", "آمِن", "يَعْقُوب", "طَيِّب", "أَلْباب", "انتَهَى", "وَقَى", "هاجَرَ", "بَسَطَ", "داوُد", "مَرْجِع", "فَرِحَ", "سُنَّة", "سارَ", "سَعِير", "خَسِرَ", "أُفِكَ", "اسْتَمَعَ", "فُؤاد", "مِيزان", "قَرَأَ", "قَدَّرَ", "أَفْسَدُ", "كُلَّما", "يُبْدِيَ", "سَكَنَ", "صَبْر", "شَرِبَ", "اعْتَدَى", "نَصْرانِيّ", "بُشْرَى", "ظَهْر", "مِلَّة", "صَدَقَ", "مُنذِر", "حَلِيم", "وَعَظْ", "مَلِك", "غَلَبُ", "أَتْبَعَ", "قِسْط", "بَلاغ", "أُوذِيَ", "يَسِير", "حَرَج", "أَخَّرَ", "رِجْل", "صَنَعُ", "مُسْرِف", "أَغْنَى", "تَنزِيل", "ضالّ", "خاشِع", "عَدْل", "غَضَب", "أَخْلَفُ", "والِد", "لَعْنَة", "مُهِين", "أَلْف", "مَقام", "بَلَد", "شاكِر", "حُدُود", "ابْتِغاء", "نَكَحَ", "حَلَلْ", "كَفَّرَ", "صَرَفَ", "عَدَلَ", "أُخْت", "أَعْتَدَتْ", "لَيْت", "أَثَر", "صِدْق", "قادِر", "كَشَفَ", "تَعالَى", "أَمِين", "مَدِينَة", "مُفْلِح"];
+
+// download clips for a word list, four at a time, skipping what is already saved
+let audioBusy = false;
+async function downloadAudioFor(words, onProgress) {
+  if (audioBusy) return null;
+  audioBusy = true;
+  try {
+    const have = new Set(await audioKeys());
+    const todo = [...new Set(words)].filter(w => w && w.trim() && !have.has(plainAr(w)));
+    const total = todo.length;
+    let done = 0, failed = 0;
+    const queue = todo.slice();
+    const worker = async () => {
+      for (;;) {
+        const w = queue.shift();
+        if (!w) return;
+        try {
+          const r = await fetch(API_BASE + "/v1/dictionary/audio?word=" + encodeURIComponent(w), { headers: authHeaders() });
+          if (!r.ok) throw new Error("HTTP " + r.status);
+          const blob = await r.blob();
+          if (blob.size < 200) throw new Error("empty clip");
+          await audioPut(plainAr(w), blob);
+        } catch (e) { failed++; }
+        done++;
+        if (onProgress) onProgress(Math.min(99, Math.round(done / Math.max(total, 1) * 100)), done, total, failed);
+      }
+    };
+    await Promise.all([worker(), worker(), worker(), worker()]);
+    AUDIO_COUNT = await audioCount();
+    return { total, done, failed };
+  } finally { audioBusy = false; }
+}
+
+// clip for one word: saved copy first, else fetch and file it — no TTS fallback here
+async function fetchWordAudio(word) {
+  const key = plainAr(word);
+  try {
+    const blob = await audioGet(key);
+    if (blob && blob.size > 200) { const u = URL.createObjectURL(blob); AUDIO_CACHE.set(word, u); return u; }
+  } catch (e) {}
+  try {
+    const r = await fetch(API_BASE + "/v1/dictionary/audio?word=" + encodeURIComponent(word), { headers: authHeaders() });
+    if (!r.ok) throw new Error("HTTP " + r.status);
+    const blob = await r.blob();
+    if (blob.size < 200) throw new Error("empty clip");
+    audioPut(key, blob);
+    const u = URL.createObjectURL(blob);
+    AUDIO_CACHE.set(word, u);
+    return u;
+  } catch (e) { return null; }
+}
+
+
+// ---------- offline library: dictionary + Quran + pronunciation audio ----------
+const IC_DL = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m0 0 4-4m-4 4-4-4"/><path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg>';
+const IC_OK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>';
+const IC_BOOK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20V4H6.5A2.5 2.5 0 0 0 4 6.5v13Z"/><path d="M4 19.5A2.5 2.5 0 0 0 6.5 22H20v-5"/></svg>';
+const IC_QURAN = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 6.5C10.5 5 8 4.5 5 4.8v12.4c3-.3 5.5.2 7 1.7 1.5-1.5 4-2 7-1.7V4.8c-3-.3-5.5.2-7 1.7Z"/><path d="M12 6.5v12.4"/></svg>';
+const IC_AUDIO = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H3v6h3l5 4V5Z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M18.5 5.5a9 9 0 0 1 0 13"/></svg>';
+
+function libRow(id, icon, ok, title, sub, action) {
+  return `<div class="librow" id="${id}">
+    <div class="lic ${ok ? "ok" : ""}">${ok ? IC_OK : icon}</div>
+    <div class="ltx"><b>${title}</b><br>${sub}</div>
+    <div class="lact">${action || ""}</div>
   </div>`;
 }
-function wireOfflineCard() {
-  const d = $("#packDl"), x = $("#packDel");
-  if (d) d.addEventListener("click", async () => {
-    d.disabled = true;
-    const card = d.closest(".qstatus");
-    card.innerHTML = `<div class="qic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 3v12m0 0 4-4m-4 4-4-4"/><path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg></div><span class="qtx" id="packStat">Downloading dictionary… 0%</span>`;
-    try {
-      const n = await downloadPack(p => { const s = $("#packStat"); if (s) s.innerHTML = `<b style="color:var(--green)">Downloading dictionary… ${p}%</b>`; });
-      card.innerHTML = `<div class="qic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></div><span class="qtx"><b style="color:var(--green)">${n.toLocaleString()} words saved</b><br>you are fully offline now</span><button class="btn ghost small" id="packDel">Remove</button>`;
-      const xx = $("#packDel");
-      if (xx) xx.addEventListener("click", async () => { await removePack(); renderSearch(); });
-    } catch (e) {
-      card.innerHTML = `<span class="qtx" style="color:var(--red)">Download failed: ${esc(e.message)}</span> <button class="btn small" id="packRetry" style="margin-left:8px">Try again</button>`;
-      const rt = $("#packRetry");
-      if (rt) rt.addEventListener("click", () => { renderSearch(); const nd = $("#packDl"); if (nd) nd.click(); });
+
+function libraryCardHTML() {
+  const dOk = !!PACK, qOk = quranComplete(QPACK);
+  const aOk = AUDIO_COUNT > 0;
+  const n = (dOk ? 1 : 0) + (qOk ? 1 : 0) + (aOk ? 1 : 0);
+  const rows = [
+    dOk
+      ? libRow("libDict", IC_BOOK, true, "Dictionary offline", `${(PACK.total || 0).toLocaleString()} words saved — search and roots work anywhere`, `<button class="btn ghost small" data-lib="dictDel">Remove</button>`)
+      : libRow("libDict", IC_BOOK, false, "Dictionary", "36,500+ words · ~2 MB · full offline search", `<button class="btn small" data-lib="dictDl" style="white-space:nowrap">Download</button>`),
+    qOk
+      ? libRow("libQuran", IC_QURAN, true, "Quran offline", "114 suras · 6,236 ayahs saved", `<button class="btn ghost small" data-lib="quranDel">Remove</button>`)
+      : libRow("libQuran", IC_QURAN, false, "Quran", "114 suras · ~2 MB · read without a connection", `<button class="btn small" data-lib="quranDl" style="white-space:nowrap">Download</button>`),
+    aOk
+      ? libRow("libAudio", IC_AUDIO, true, "Pronunciation audio offline", `${AUDIO_COUNT.toLocaleString()} clips saved — plays without a connection`, `<button class="btn ghost small" data-lib="audioDel">Remove</button>`)
+      : libRow("libAudio", IC_AUDIO, false, "Pronunciation audio", "600 core Quranic words · ~4 MB — every word you listen to is saved too", `<button class="btn small" data-lib="audioDl" style="white-space:nowrap">Download</button>`)
+  ];
+  return `<div class="lib">
+    <div class="libhead"><span class="lt">STUDY OFFLINE</span><span class="ls">${n} of 3 packs saved</span></div>
+    ${rows.join("")}
+  </div>`;
+}
+
+function libRowProgress(id, pct, label) {
+  const row = document.getElementById(id);
+  if (!row) return;
+  const ic = row.querySelector(".lic"); if (ic) { ic.className = "lic"; ic.innerHTML = IC_DL; }
+  const tx = row.querySelector(".ltx");
+  if (tx) tx.innerHTML = `<b>${esc(label)} ${pct}%</b><div class="pbarwrap"><div class="pbar" style="width:${Math.max(pct, 3)}%"></div></div>`;
+  const act = row.querySelector(".lact"); if (act) act.innerHTML = "";
+}
+
+function wireLibraryCard() {
+  const el = $("#libraryCard");
+  if (!el) return;
+  el.querySelectorAll("[data-lib]").forEach(b => b.addEventListener("click", async ev => {
+    ev.stopPropagation();
+    const what = b.dataset.lib;
+    if (what === "dictDl") {
+      b.disabled = true;
+      try {
+        const n2 = await downloadPack(p => libRowProgress("libDict", p, "Saving dictionary…"));
+        toast(`${n2.toLocaleString()} words saved for offline study`);
+      } catch (e) { toast("Dictionary download failed: " + e.message); }
+      el.innerHTML = libraryCardHTML(); wireLibraryCard();
+    } else if (what === "dictDel") {
+      await removePack();
+      el.innerHTML = libraryCardHTML(); wireLibraryCard();
+    } else if (what === "quranDl") {
+      if (quranBusy) return;
+      b.disabled = true;
+      try {
+        await downloadQuran(p => libRowProgress("libQuran", p, "Saving the Quran…"));
+        toast("All 114 suras saved for offline reading");
+      } catch (e) { toast("Quran download failed: " + e.message); }
+      el.innerHTML = libraryCardHTML(); wireLibraryCard();
+    } else if (what === "quranDel") {
+      await quranDel(); QPACK = null; localStorage.setItem(QREMOVED_KEY, "1");
+      el.innerHTML = libraryCardHTML(); wireLibraryCard();
+    } else if (what === "audioDl") {
+      if (!navigator.onLine) { toast("Connect to the internet once to download"); return; }
+      if (audioBusy) return;
+      b.disabled = true;
+      try {
+        const res = await downloadAudioFor(CORE_AUDIO, p => libRowProgress("libAudio", p, "Saving audio…"));
+        toast(res && res.total ? `Audio saved — ${res.done} clip${res.done === 1 ? "" : "s"}${res.failed ? " (" + res.failed + " failed, retry anytime)" : ""}` : "Audio already saved");
+      } catch (e) { toast("Audio download failed: " + e.message); }
+      el.innerHTML = libraryCardHTML(); wireLibraryCard();
+    } else if (what === "audioDel") {
+      await audioClear();
+      AUDIO_CACHE.forEach(u => { try { URL.revokeObjectURL(u); } catch (e) {} });
+      AUDIO_CACHE.clear(); AUDIO_COUNT = 0;
+      el.innerHTML = libraryCardHTML(); wireLibraryCard();
     }
-  });
-  if (x) x.addEventListener("click", async () => { await removePack(); renderSearch(); });
+  }));
 }
 
 async function api(path) {
@@ -702,27 +922,18 @@ const AUDIO_CACHE = new Map(); // word -> object URL of the fetched MP3
 let currentAudio = null;
 let arVoice = null;
 
-// Real recorded-style pronunciation from the Ilm API; falls back to the
-// browser's built-in Arabic voice when offline or on error.
+// Real recorded-style pronunciation: saved clip first (offline audio pack),
+// else fetched and filed for offline; device TTS as the graceful fallback.
 async function playWord(word, btn) {
   const w = String(word || "").trim();
   if (!w) return;
   if (currentAudio) { currentAudio.pause(); if (currentAudio._btn) currentAudio._btn.classList.remove("playing"); currentAudio = null; }
   try { speechSynthesis.cancel(); } catch (e) {}
-  let url = AUDIO_CACHE.get(w);
+  let url = AUDIO_CACHE.get(w) || null;
   if (!url) {
     if (btn) btn.classList.add("loading");
-    try {
-      const r = await fetch(API_BASE + "/v1/dictionary/audio?word=" + encodeURIComponent(w), { headers: authHeaders() });
-      if (!r.ok) throw new Error("HTTP " + r.status);
-      url = URL.createObjectURL(await r.blob());
-      AUDIO_CACHE.set(w, url);
-    } catch (e) {
-      speak(w); // graceful fallback: device TTS
-    } finally {
-      if (btn) btn.classList.remove("loading");
-    }
-    if (!url) return;
+    try { url = await fetchWordAudio(w); } finally { if (btn) btn.classList.remove("loading"); }
+    if (!url) { speak(w); return; } // graceful fallback: device TTS
   }
   const a = new Audio(url);
   a._btn = btn;
@@ -757,6 +968,7 @@ function toggleStar(word, gloss, root) {
   const ix = ws.findIndex(m => m.word === word);
   if (ix >= 0) ws.splice(ix, 1); else ws.unshift({ word, gloss: (gloss || "").slice(0, 300), root: root || "", added: Date.now() });
   localStorage.setItem(WORDS_KEY, JSON.stringify(ws));
+  if (ix < 0 && navigator.onLine) fetchWordAudio(word).catch(() => {}); // silently file new words for offline audio
   return ix < 0;
 }
 
@@ -837,12 +1049,32 @@ function wireCards(scope) {
 // ---- SEARCH TAB ----
 async function renderSearch() {
   const el = $("#content");
+  const hour = new Date().getHours();
+  const greet = hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening";
+  const dateStr = new Date().toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" });
+  const st = streakGet();
+  const due = dueCount();
   el.innerHTML = `
+    <div class="homehead">
+      <div><div class="hgreet">${greet}</div><div class="hdate">${esc(dateStr)}</div></div>
+      <div class="hchips">
+        <button class="hchip ${due > 0 ? "due" : ""}" id="chipReview">${due > 0 ? esc(due) + " card" + (due === 1 ? "" : "s") + " due" : "Review deck"}</button>
+        <button class="hchip ${st.count > 0 ? "" : "dim"}" id="chipStreak">${st.count > 0 ? "🔥 " + esc(st.count) + "-day streak" : "Start a streak"}</button>
+      </div>
+    </div>
     <div class="searchbar"><div class="sfield"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><input id="q" aria-label="Search words" placeholder="English, Arabic or romanized — patience, صبر, sabr" /></div><button class="btn" id="go">Search</button></div>
-    <div id="offlineCard">${offlineCardHTML()}</div>
-    <div class="card wcard" id="wotd"><div class="wotd-label">WORD OF THE DAY</div><div class="loading">…</div></div>
+    <div id="libraryCard">${libraryCardHTML()}</div>
+    <div class="card wcard" id="wotd">
+      <div class="wotd-label">WORD OF THE DAY</div>
+      <div class="skel" style="height:34px;width:52%;margin-top:14px;border-radius:12px"></div>
+      <div class="skel" style="width:78%;margin-top:12px"></div>
+      <div class="skel" style="width:64%;margin-top:10px"></div>
+    </div>
     <div id="results"></div>`;
-  wireOfflineCard();
+  wireLibraryCard();
+  const goWords = () => { const b = document.querySelector('.tabs button[data-tab="words"]'); if (b) b.click(); };
+  $("#chipReview").addEventListener("click", goWords);
+  $("#chipStreak").addEventListener("click", goWords);
   const q = $("#q");
   const run = async () => {
     const v = q.value.trim();
@@ -908,11 +1140,19 @@ async function loadWotd() {
     const root = roots.roots[Math.abs(epochDay) % roots.roots.length].root;
     const fam = await api(`/v1/dictionary/root/${encodeURIComponent(root)}`);
     const e = fam.entries[0];
-    el.innerHTML = `<button class="speak" data-say="${esc(e.word)}" title="Listen">${SPK_SVG}</button><div class="wotd-label">WORD OF THE DAY · ROOT ${esc(fam.root)}</div>
-      <div class="ar" style="margin-top:8px">${esc(e.word)}<span class="pos">${esc(e.pos || "")}</span></div>
+    const starred = isStarred(e.word);
+    el.innerHTML = `
+      <div class="wotd-top">
+        <div class="wotd-label">WORD OF THE DAY · ROOT ${esc(fam.root)}</div>
+        <button class="speak" data-say="${esc(e.word)}" title="Listen">${SPK_SVG}</button>
+      </div>
+      <div class="ar wotd-word">${esc(e.word)}<span class="pos">${esc(e.pos || "")}</span></div>
       <div class="gloss">${esc(e.gloss_en || "")}</div>
-      <div class="note">A new word every day — star it to add it to your study deck</div>
-      <span class="rootchip" data-root="${esc(fam.root)}">جذر ${esc(fam.root)} — see the whole family</span>`;
+      <div class="wotd-actions">
+        <span class="rootchip" data-root="${esc(fam.root)}">جذر ${esc(fam.root)} — see the whole family</span>
+        <button class="star ${starred ? "on" : ""}" data-star="${esc(e.word)}" data-gloss="${esc((e.gloss_en || "").slice(0, 120))}" data-root="${esc(e.root || fam.root || "")}" title="Save to My Words">${starred ? "★" : "☆"}</button>
+      </div>
+      <div class="note">A new word every day — star it to add it to your study deck</div>`;
     wireCards(el);
   } catch (e) { el.innerHTML = `<div class="note">Word of the day unavailable offline</div>`; }
 }
@@ -1062,6 +1302,7 @@ function renderWords() {
       <span class="stat">Due today<b>${due}</b></span>
       <span class="stat">Streak<b>${st.count > 0 ? "🔥 " + st.count + " days" : "—"}</b></span>
     </div>
+    <div class="audiohead" id="audiohead"><span>🔊 checking offline audio…</span></div>
     <div class="wordsbar">
       <button class="btn" id="review">Review flashcards${due ? " · " + due + " due" : ""}</button>
       <button class="btn ghost small" id="export">Export</button>
@@ -1077,6 +1318,23 @@ function renderWords() {
       ${srsChips(w.word)}
     </div>`).join("")}
     <p class="note">Star a word again to remove it · review daily to grow your streak</p>`;
+  (async () => { // offline-audio status + save button
+    const h = $("#audiohead"); if (!h) return;
+    const kset = new Set(await audioKeys());
+    const have = ws.filter(w => kset.has(plainAr(w.word))).length;
+    h.innerHTML = `<span>🔊 <b>${have} of ${ws.length}</b> word${ws.length === 1 ? "" : "s"} have offline pronunciation${have < ws.length ? "" : " — all set"}</span>${have < ws.length ? `<button class="btn ghost small" id="saveAudio" style="white-space:nowrap">Save ${ws.length - have}</button>` : ""}`;
+    const sa = $("#saveAudio");
+    if (sa) sa.addEventListener("click", async () => {
+      if (!navigator.onLine) { toast("Connect to the internet once to download"); return; }
+      sa.disabled = true;
+      const missing = ws.filter(w => !kset.has(plainAr(w.word))).map(w => w.word);
+      try {
+        const res = await downloadAudioFor(missing, (p, done, total) => { const b = h.querySelector("b"); if (b) b.textContent = `saving ${done} / ${total}…`; });
+        toast(res && res.failed ? `Saved — ${res.failed} clip(s) failed, retry anytime` : "Pronunciation saved for all your words");
+      } catch (e) { toast("Audio download failed"); }
+      renderWords();
+    });
+  })();
   $("#review").addEventListener("click", () => review(buildQueue()));
   $("#export").addEventListener("click", exportDeck);
   $("#importBtn").addEventListener("click", () => $("#importFile").click());
@@ -1571,6 +1829,7 @@ document.querySelectorAll(".tabs button").forEach(b => b.addEventListener("click
     const q = await quranGet();
     if (q && q.surahs && q.surahs.length) QPACK = q;
   } catch (e) {}
+  try { AUDIO_COUNT = await audioCount(); } catch (e) {}
   renderSearch();
   quranDailyCheck(); // daily: make sure every single sura is saved offline
 })();

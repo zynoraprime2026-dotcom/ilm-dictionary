@@ -1,5 +1,5 @@
 // Ilm Dictionary service worker — app shell + API responses cached for offline study
-const CACHE = "ilm-dict-v18";
+const CACHE = "ilm-dict-v19";
 const SHELL = ["./", "./index.html", "./manifest.webmanifest", "./icon-192.png", "./icon-512.png"];
 const API = "https://ilm-api.vercel.app";
 
@@ -45,8 +45,10 @@ self.addEventListener("fetch", e => {
   if (url.origin === location.origin) e.respondWith(shellFetch(e.request));
   else if (url.origin === API) {
     // The /offline packs (dictionary ~4.7MB, Quran ~2.3MB) are persisted in
-    // IndexedDB by the app itself — caching them here too would double storage
-    if (url.pathname.endsWith("/offline")) return;
+    // IndexedDB by the app itself — caching them here too would double storage.
+    // Pronunciation clips (~7KB each) live in the app's IndexedDB audio store
+    // too: every word played is filed for offline, so skip the double copy.
+    if (url.pathname.endsWith("/offline") || url.pathname.includes("/dictionary/audio")) return;
     e.respondWith(apiFetch(e.request));
   }
   // Google Fonts are versioned/immutable — cache-first keeps the Amiri/Inter
