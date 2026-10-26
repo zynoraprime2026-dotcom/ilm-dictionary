@@ -523,8 +523,8 @@ function localServe(path) {
     return { data: { root: meta.root_arabic || decodeURIComponent(m[1]), entry_count: es.length, quranic: { root_arabic: meta.root_arabic, meaning: meta.meaning, occurrence_count: meta.occurrence_count }, entries: es } };
   }
   if (path === "/v1/roots" || path.startsWith("/v1/roots?")) {
-    const roots = (PACK.roots || []).map(r => ({ root: r.root_arabic, root_arabic: r.root_arabic, meaning: r.meaning, occurrence_count: r.occurrence_count }));
-    return { data: { count: roots.length, roots } };
+    // same shape as the live API: a bare array of roots
+    return { data: (PACK.roots || []).map(r => ({ root: r.root_arabic, root_arabic: r.root_arabic, meaning: r.meaning, occurrence_count: r.occurrence_count })) };
   }
   return null;
 }
@@ -650,12 +650,16 @@ function latSkeleton(q) {
   return out;
 }
 const ROOTS_CACHE_KEY = "ildict_roots_cache";
+const asRootsArray = d => Array.isArray(d) ? d : (d && Array.isArray(d.roots)) ? d.roots : [];
 async function getRootsCached() {
   try {
     const c = JSON.parse(localStorage.getItem(ROOTS_CACHE_KEY) || "null");
-    if (c && Date.now() - c.t < 7 * 86400000) return c.data;
+    if (c && Date.now() - c.t < 7 * 86400000) {
+      const cached = asRootsArray(c.data);
+      if (cached.length) return cached;
+    }
   } catch (e) {}
-  const data = await api("/v1/roots");
+  const data = asRootsArray(await api("/v1/roots"));
   try { localStorage.setItem(ROOTS_CACHE_KEY, JSON.stringify({ t: Date.now(), data })); } catch (e) {}
   return data;
 }
@@ -978,7 +982,7 @@ async function renderRoots() {
   el.innerHTML = `<div class="searchbar"><div class="sfield"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><input id="rq" aria-label="Filter roots" placeholder="Filter roots by meaning — mercy, knowledge" /></div><button class="btn" id="rgo">Filter</button></div>
     <p class="note" style="margin-top:10px">Loading roots…</p>`;
   try {
-    const data = await api("/v1/roots");
+    const data = asRootsArray(await api("/v1/roots"));
     let shown = 100;
     const draw = () => {
       const f = ($("#rq").value || "").trim().toLowerCase();
